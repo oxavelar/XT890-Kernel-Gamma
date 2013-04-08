@@ -19,7 +19,8 @@ KVERSION = linux-3.0
 ARCH = i386
 PLATFORM = $(PWD)
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
-KBUILD_OUT_PATH = $(PLATFORM)/out/kbuild
+OUT_PATH = $(PLATFORM)/out
+KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
 CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.6/bin/i686-linux-android-
 NUMJOBS = `grep -c cores /proc/cpuinfo)`
 
@@ -50,22 +51,24 @@ androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: boot
 boot: kernel
-	rm -fR $(KBUILD_OUT_PATH)/../tmpramdisk
-	cp -R $(PWD)/ramdisk $(KBUILD_OUT_PATH)/../tmpramdisk
-	find $(KBUILD_OUT_PATH) -iname "*.ko" -exec cp \{\} $(KBUILD_OUT_PATH)/../tmpramdisk/lib/modules/ \;
+	rm -fR /tmp/smi-ramdisk
+	cp -R $(PWD)/ramdisk /tmp/smi-ramdisk
+	find $(KBUILD_OUT_PATH) -iname "*.ko" -exec cp \
+	 \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	# Workarounds, avoiding recompile of certain module for now...
-	cp -f $(PWD)/ramdisk/lib/modules/compat.ko $(KBUILD_OUT_PATH)/../tmpramdisk/lib/modules/
-	cp -f $(PWD)/ramdisk/lib/modules/cfg80211.ko $(KBUILD_OUT_PATH)/../tmpramdisk/lib/modules/
-	cp -f $(PWD)/ramdisk/lib/modules/mac80211.ko $(KBUILD_OUT_PATH)/../tmpramdisk/lib/modules/
-	cp -f $(PWD)/ramdisk/lib/modules/wl12xx.ko $(KBUILD_OUT_PATH)/../tmpramdisk/lib/modules/
-	cp -f $(PWD)/ramdisk/lib/modules/wl12xx_sdio.ko $(KBUILD_OUT_PATH)/../tmpramdisk/lib/modules/
+	cp -f $(PWD)/ramdisk/lib/modules/compat.ko      /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/ramdisk/lib/modules/cfg80211.ko    /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/ramdisk/lib/modules/mac80211.ko    /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/ramdisk/lib/modules/wl12xx.ko      /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/ramdisk/lib/modules/wl12xx_sdio.ko /tmp/smi-ramdisk/lib/modules/
 	# Done with driver workarounds...
-	$(PWD)/prebuilt/pack-ramdisk.sh $(KBUILD_OUT_PATH)/../tmpramdisk
-	cp $(KBUILD_OUT_PATH)/arch/x86/boot/bzImage $(KBUILD_OUT_PATH)/../kernel
+	$(PWD)/prebuilt/pack-ramdisk.sh /tmp/smi-ramdisk
+	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
+	cp $(KBUILD_OUT_PATH)/arch/x86/boot/bzImage $(OUT_PATH)/kernel
 	# Pack the boot.img
-	$(PWD)/prebuilt/mkbootimg --kernel $(KBUILD_OUT_PATH)/../kernel          \
-	--ramdisk $(KBUILD_OUT_PATH)/../tmpramdisk.cpio.gz                       \
-	--cmdline $(BOOT_CMDLINE) --output $(PLATFORM)/out/
+	$(PWD)/prebuilt/mkbootimg --kernel $(OUT_PATH)/kernel \
+	 --ramdisk $(OUT_PATH)/ramdisk.cpio.gz                \
+	 --cmdline $(BOOT_CMDLINE) --output $(PLATFORM)/out/
 
 .PHONY: kernel
 kernel:
