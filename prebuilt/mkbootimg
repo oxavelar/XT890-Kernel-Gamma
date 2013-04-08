@@ -1,0 +1,135 @@
+#!/bin/bash
+# build nand boot recovery image for android
+
+HELP=--help
+
+if [ -z "$1" ]
+then 
+    echo "Usage :" 
+    echo "      mkbootimg --kernel <kernel_image> --ramdisk <ramdisk_image> --cmdline "init=/init pci=noearly console=logk0 vmalloc=260046848 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 console=ttyMFD3 loglevel=7" --output <.>"
+    exit 0
+fi
+
+if [ "$1" == "$HELP" ]
+then
+    echo "Usage :" 
+    echo "      mkbootimg --kernel <kernel_image> --ramdisk <ramdisk_image> --cmdline "init=/init pci=noearly console=logk0 vmalloc=260046848 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 console=ttyMFD3 loglevel=7" --output <.>"
+    exit 0
+fi
+
+
+TEMP=`getopt \
+         -o c:r:k:o:p: \
+         --long cmdline:,ramdisk:,kernel:,output:,product:, \
+         -n '$0' \
+         --  "$@"`
+
+
+eval set -- "$TEMP"
+while true ; do
+    echo "+++++ case $1 +++++"
+    case "$1" in
+        --cmdline) CMDLINE="$2"; shift 2;;
+        --ramdisk) INITRD=$2; shift 2;;
+        --kernel) BZIMAGE=$2; shift 2;;
+        --output) OUT=$2; shift 2;;
+        --product) BOARD=$2; shift 2;;
+        --) shift ; break ;;
+    esac
+done
+
+
+#TARG=`dirname $OUT`
+IMGNAME="boot"
+
+
+UNSIGNED_OUT=${OUT}/${IMGNAME}.img
+CMDLINE_FILE=${OUT}/${IMGNAME}_cmdline
+echo $CMDLINE > $CMDLINE_FILE
+echo $CMDLINE
+
+if [ ! -e ${BZIMAGE} ]; then
+    echo "error: bzImage file ${BZIMAGE} does not exist"
+    echo "Usage :" 
+    echo "      mkbootimg --kernel <kernel_image> --ramdisk <ramdisk_image> --cmdline "init=/init pci=noearly console=logk0 vmalloc=260046848 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 console=ttyMFD3 loglevel=7" --output <.>"
+	
+    exit 1
+fi
+
+if [ ! -e "${INITRD}" ]; then
+    echo "error: ramdisk.img file ${INTRD} does not exist"
+    echo "Usage :" 
+    echo "      mkbootimg --kernel <kernel_image> --ramdisk <ramdisk_image> --cmdline "init=/init pci=noearly console=logk0 vmalloc=260046848 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 console=ttyMFD3 loglevel=7" --output <.>"
+	
+    exit 1
+fi
+
+if [ ! -e "${CMDLINE_FILE}" ]; then
+    echo "error: cmdline file ${CMDLINE} does not exist"
+    echo "Usage :" 
+    echo "      mkbootimg --kernel <kernel_image> --ramdisk <ramdisk_image> --cmdline "init=/init pci=noearly console=logk0 vmalloc=260046848 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 console=ttyMFD3 loglevel=7" --output <.>"
+
+    exit 1
+fi
+
+
+# convert a decimal number to the sequence that printf could recognize to output binary integer (not ASCII)
+binstring ()
+{
+	h1=$(($1%256))
+        h2=$((($1/256)%256))
+        h3=$((($1/256/256)%256))
+        h4=$((($1/256/256/256)%256))
+        binstr=`printf "\x5cx%02x\x5cx%02x\x5cx%02x\x5cx%02x" $h1 $h2 $h3 $h4`
+}
+
+stitch()
+{
+
+	if [ $# -lt 4 ]; then
+       		echo "usage: nand.sh cmdline_path  bzImage_path initrd_path output_image"
+        	exit 1
+	fi
+
+	if [ ! -e "$1" ]; then
+        	echo "cmdline file not exist!"
+        	exit 1
+	fi
+
+	if [ ! -e "$2" ]; then
+        	echo "no kernel bzImage file!"
+        	exit 1
+	fi
+
+	if [ ! -e "$3" ]; then
+        	echo "no initrd file!"
+       		exit 1
+	fi
+
+
+# add cmdline to the first part of boot image
+	cat $1 /dev/zero | dd of=$4 bs=4096 count=1
+
+# append bzImage and initrd
+	cat $2 $3 | dd of=$4 bs=4096 seek=2
+
+# fill bzImage_size and initrd_size
+	binstring `stat -L -c %s $2`
+	printf $binstr | dd of=$4 bs=1 seek=1024 conv=notrunc
+	binstring `stat -L -c %s $3`
+	printf $binstr | dd of=$4 bs=1 seek=1028 conv=notrunc
+
+# done
+	echo "Image stitch done"
+	echo "Out: ${UNSIGNED_OUT}"
+	exit 0
+}
+
+stitch  ${CMDLINE_FILE} ${BZIMAGE} ${INITRD} ${UNSIGNED_OUT}
+
+if [ "0" -ne "$?" ]; then
+    echo "error in stitch func in generating ${UNSIGNED_OUT}"
+    exit 1
+fi
+
+echo "Done."
