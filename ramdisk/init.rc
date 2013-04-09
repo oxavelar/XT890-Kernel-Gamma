@@ -246,8 +246,9 @@ on boot
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 400
-    write /proc/sys/vm/dirty_writeback_centisecs 1600
+    write /proc/sys/vm/dirty_writeback_centisecs 2000
     write /proc/sys/vm/dirty_background_ratio  5
+    write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -472,7 +473,8 @@ service installd /system/bin/installd
     class main
     socket installd stream 600 system system
 
-service flash_recovery /system/etc/install-recovery.sh
+# Execute files in /etc/init.d before booting
+service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
     class main
     oneshot
 
