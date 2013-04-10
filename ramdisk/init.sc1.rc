@@ -8,10 +8,10 @@ import init.moto.rc
 import init.wifi.rc
 import init.tcmd.rc
 
-# include usb rc file
+# Include usb rc file
 import init.moto.usb.rc
 
-# no emmc file systems mounted at this point (system, data, pds, etc.)
+# No emmc file systems mounted at this point (system, data, pds, etc.)
 # runs after "on early-init" and before "on early-fs"
 # runs in charge-only-mode
 on init
@@ -43,10 +43,10 @@ on init
     write /proc/sys/net/bridge/bridge-nf-call-iptables  0
     write /proc/sys/net/bridge/bridge-nf-call-ip6tables 0
 
-    # set auto_suspend delay to 10ms for camera which is on bus i2c-4
+    # Set auto_suspend delay to 10ms for camera which is on bus i2c-4
     write /sys/bus/pci/devices/0000:00:03.3/power/autosuspend_delay_ms 10
 
-# run after "on init" in charge-only-mode
+# Run after "on init" in charge-only-mode
 # init does not automatically run "on early-fs", "on fs", "on post-fs",
 #   "on post-fs-data", "on early-boot", and "on boot" in charge-only-mode
 on charger
@@ -64,11 +64,11 @@ on charger
     start watchdogd
     start charge_only_mode
 
-# runs after "on init" and before "on fs"; doesn't run in charge-only-mode
+# Runs after "on init" and before "on fs"; doesn't run in charge-only-mode
 on early-fs
     mkdir /pds 0755 root root
 
-# runs after "on fs" and before "on post-fs-data"
+# Runs after "on fs" and before "on post-fs-data"
 # /system, /cache, and /pds should be mounted at this point
 # does not usually run charge-only-mode
 on post-fs
@@ -78,20 +78,20 @@ on post-fs
     chown media system /sys/devices/platform/gpio-keys/enabled_wakeup
     chown media system /sys/devices/platform/gpio-keys/disabled_wakeup
 
-    #  Permissions for Sensors
+    # Permissions for Sensors
     # accelerometer lis3dh
     chown system system /sys/bus/i2c/devices/5-0018/lis3dh/poll
     chown system system /sys/bus/i2c/devices/5-0018/lis3dh/enable
 
-    #barometer ms5607
+    # Barometer ms5607
     chown system system /sys/bus/i2c/devices/5-0077/enable
     chown system system /sys/bus/i2c/devices/5-0077/poll
 
-    # compass hmc5883
+    # Compass hmc5883
     chown system system /sys/bus/i2c/devices/5-001e/hmc5883/enable
     chown system system /sys/bus/i2c/devices/5-001e/hmc5883/poll
 
-    #Gyroscope
+    # Gyroscope
     chown system system /sys/bus/i2c/devices/5-0068/enable
     chown system system /sys/bus/i2c/devices/5-0068/poll
 
@@ -183,13 +183,13 @@ on post-fs
     chown mot_tpapi mot_tpapi /pds/security/storage.bin
     chown mot_tpapi mot_tpapi /pds/security/keymaptable.dat
 
-    # make modem fuse status readable for everyone
+    # Make modem fuse status readable for everyone
     chmod 0644 /pds/modem_fuse.fus
 
     # Create pds/public/locale to store current language selected
     mkdir /pds/public/locale 0700 system system
 
-# run after "on post-fs" and before "on early-boot"
+# Run after "on post-fs" and before "on early-boot"
 # /data should always be mounted by this point
 on post-fs-data
     # we will remap this as /storage/sdcard0 with the sdcard fuse tool
@@ -213,10 +213,6 @@ on post-fs-data
     mkdir /tmp/commdrv 0770 radio radio
     setprop ro.sys.atvc_allow_gki_log 0
 
-    # Create folder for native & kernel to write to DropBox. See NativeDropBoxAgent.java for
-    # an explanation of why these permissions are chosen.
-    mkdir /data/system/dropbox-add 0730 system diag
-
     mkdir /data/misc/firmware 0770 system system
     mkdir /data/misc/thermal 0770 system system
 
@@ -229,7 +225,7 @@ on post-fs-data
     setprop persist.service.aplogpti.enable ${persist.service.aplogpti.enable}
     setprop persist.service.aklogpti.enable ${persist.service.aklogpti.enable}
 
-    #NVM CONFIG temporary tool - Bug 735
+    # NVM CONFIG temporary tool - Bug 735
     mkdir /system/etc/carrier_variants 0775 system system
 
     # directory for encryption management tool, enc_mgt_tool
@@ -245,7 +241,7 @@ on post-fs-data
     # Set indication (checked by vold) that we have finished this action
     setprop vold.post_fs_data_done 1
 
-# run after "on post-fs-data", before "on boot"
+# Run after "on post-fs-data", before "on boot"
 # may not be run in charge-only-mode
 on early-boot
     # Define Motorola DBVC ATVC Property defaults (failsafe properties)
@@ -272,7 +268,7 @@ on early-boot
     # Need to launch enc_mgt_tool to create device key and signature for vold to set up sd card
     start enc_tool
 
-# run after "on early-boot"; does not run in charge-only-mode
+# Run after "on early-boot"; does not run in charge-only-mode
 on boot
     chmod 0777 /system/etc/vpimg.bin
 
@@ -297,33 +293,6 @@ on boot
     chmod 0660 /sys/devices/pci0000:00/0000:00:02.0/elvss_tth_status
     chown system system /sys/devices/pci0000:00/0000:00:02.0/elvss_tth_status
 
-# Moto bug2go bugreport
-service bug2go-bugreport /system/bin/bug2go-bugreport
-    class main
-    disabled
-    oneshot
-    keycodes 115 116 # Vol up + Power key
-
-# Let init manage the bug2go-native wakelock, so that we guarantee its
-# lifecycle exactly matches that of bug2go-bugreport.  Since init sends
-# SIGKILL when stopping a service, we could not guarantee the wakelock would
-# get cleaned up if it were managed by bug2go-bugreport itself.
-on property:init.svc.bug2go-bugreport=running
-    write /sys/power/wake_lock bug2go-native
-
-on property:init.svc.bug2go-bugreport=stopping
-    write /sys/power/wake_unlock bug2go-native
-
-on property:init.svc.bug2go-bugreport=stopped
-    write /sys/power/wake_unlock bug2go-native
-
-# Hardware Revisions
-service hw_rev /system/bin/logwrapper /system/bin/sh /system/bin/hardware_revisions.sh
-    class main
-    user system
-    group system
-    oneshot
-
 service qe /xbin/qe /system
     class main
     oneshot
@@ -346,32 +315,6 @@ on property:sys.boot_completed=1
     # Insert matrix for PnP measurements
     insmod /lib/modules/matrix.ko
     chmod 0640 /dev/matrix
-
-# aplogd on at boot in emulator
-on property:ro.kernel.qemu=1
-    start aplogd
-
-on property:persist.log.aplogd.enable=1
-    start aplogd
-
-on property:persist.log.aplogd.enable=0
-    stop aplogd
-
-# aplogd start/stop is controlled by the persist.log.aplogd.enable system
-# property.  Don't set the property directly, because it's controlled by the
-# com.motorola.android.settings.aplogd Java Service and ContentProvider.  To
-# change the default behavior of aplogd on bootup, you should update the
-# defaults for the com.motorola.android.settings.aplogd Java Service and
-# ContentProvider which control it.
-service aplogd /system/bin/aplogd
-    class main
-    #user log
-    #group log system sdcard_rw mount
-    # The user and group definitions above are intentionally disabled and left
-    # only as documentation.  It actually starts as root and immediately drops
-    # to log plus those groups after preserving CAP_SYS_ADMIN, which is required
-    # for kernel logging.
-    disabled
 
 service modemlog /system/bin/modemlog
     class core
@@ -423,7 +366,7 @@ service vpnclientpm /system/bin/vpnclientpm
 
 # Properties, events trigging service
 
-# dlnasrv native service can be launched on demand
+# DLNA native service can be launched on demand
 service dlnasrv /system/bin/dlnasrv
     class main
     user mot_dlna
@@ -443,7 +386,7 @@ service enc_tool /system/bin/enc_mgt_tool
     user root
     oneshot
 
-# start the enc_mgt_tool to set the keysig when decrypted userdata partition is mounted
+# Start the enc_mgt_tool to set the keysig when decrypted userdata partition is mounted
 on property:vold.decrypt=trigger_restart_framework
     start enc_tool
 

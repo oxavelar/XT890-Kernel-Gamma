@@ -1,5 +1,5 @@
 on early-boot
-    # enable core dump function when application crash
+    # Enable core dump function when application crash
     write /proc/sys/kernel/core_pattern "|/system/bin/coredump %e %p %t"
     write /proc/sys/fs/suid_dumpable 0
     write /proc/self/coredump_filter "0x7f"
@@ -13,8 +13,7 @@ on post-fs-data
     mkdir /data/tombstones 02775 system mot_tombstone
     mkdir /data/thor_modem_panics 0770 system radio
     mkdir /data/system/    0755 system system
-    mkdir /data/system/dropbox 0700 system system
-    # intel puts /data/logs on a different partition, we don't
+    # Intel puts /data/logs on a different partition, we don't
     mkdir /data/logs 0770 system log
     mkdir /data/logs/core 0770 root log
     mkdir /data/logs/modemcrash 0775 system log
@@ -190,8 +189,3 @@ service logconfig /system/bin/logconfig
     disabled
     oneshot
 
-# started by device/intel/log_capture/crashlog
-service logsystemstate /system/bin/dumpstate_dropbox.sh -v
-    class main
-    disabled
-    oneshot
