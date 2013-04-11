@@ -23,7 +23,7 @@ on boot
     setprop ro.HEAVY_WEIGHT_APP_MEM 12288
     setprop ro.SECONDARY_SERVER_MEM 14336
     setprop ro.BACKUP_APP_MEM 14336
-    setprop ro.HOME_APP_MEM 25600
+    setprop ro.HOME_APP_MEM 22528
     setprop ro.HIDDEN_APP_MEM 16384
     setprop ro.EMPTY_APP_MEM 20480
  

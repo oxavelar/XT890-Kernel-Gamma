@@ -228,7 +228,7 @@ on post-fs-data
     # NVM CONFIG temporary tool - Bug 735
     mkdir /system/etc/carrier_variants 0775 system system
 
-    # directory for encryption management tool, enc_mgt_tool
+    # Directory for encryption management tool, enc_mgt_tool
     mkdir /data/emt 0770 root system
 
     # Create 12m directory that TCMD can write to
