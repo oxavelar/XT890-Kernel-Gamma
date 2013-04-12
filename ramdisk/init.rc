@@ -289,7 +289,7 @@ on boot
     write /sys/block/mmcblk1/queue/rotational 0
 
     # Assume SMP uses shared cpufreq policy for all CPUs
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor smartassV2
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactiveX
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 
