@@ -16,7 +16,7 @@
 #
 
 import /init.${ro.hardware}.rc
-import /init.usb.rc
+#import /init.usb.rc
 import /init.trace.rc
 
 on early-init
