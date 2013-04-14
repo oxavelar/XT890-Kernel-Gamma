@@ -77,10 +77,8 @@ static void
 deadline_add_rq_rb(struct deadline_data *dd, struct request *rq)
 {
 	struct rb_root *root = deadline_rb_root(dd, rq);
-	struct request *__alias;
 
-	while (unlikely(__alias = elv_rb_add(root, rq)))
-		deadline_move_request(dd, __alias);
+	elv_rb_add(root, rq);
 }
 
 static inline void
@@ -232,7 +230,7 @@ static inline int deadline_check_fifo(struct deadline_data *dd, int ddir)
 	/*
 	 * rq is expired!
 	 */
-	if (time_after(jiffies, rq_fifo_time(rq)))
+	if (time_after_eq(jiffies, rq_fifo_time(rq)))
 		return 1;
 
 	return 0;
@@ -339,13 +337,13 @@ static void deadline_exit_queue(struct elevator_queue *e)
 /*
  * initialize elevator private data (deadline_data).
  */
-static void *deadline_init_queue(struct request_queue *q)
+static int deadline_init_queue(struct request_queue *q)
 {
 	struct deadline_data *dd;
 
 	dd = kmalloc_node(sizeof(*dd), GFP_KERNEL | __GFP_ZERO, q->node);
 	if (!dd)
-		return NULL;
+		return -ENOMEM;
 
 	INIT_LIST_HEAD(&dd->fifo_list[READ]);
 	INIT_LIST_HEAD(&dd->fifo_list[WRITE]);
@@ -356,7 +354,9 @@ static void *deadline_init_queue(struct request_queue *q)
 	dd->writes_starved = writes_starved;
 	dd->front_merges = 1;
 	dd->fifo_batch = fifo_batch;
-	return dd;
+
+	q->elevator->elevator_data = dd;
+	return 0;
 }
 
 /*
@@ -450,9 +450,7 @@ static struct elevator_type iosched_deadline = {
 
 static int __init deadline_init(void)
 {
-	elv_register(&iosched_deadline);
-
-	return 0;
+	return elv_register(&iosched_deadline);
 }
 
 static void __exit deadline_exit(void)
