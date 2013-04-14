@@ -74,13 +74,13 @@ static unsigned int ramp_down_step;
 /*
  * CPU freq will be increased if measured load > max_cpu_load;
  */
-#define DEFAULT_MAX_CPU_LOAD 75
+#define DEFAULT_MAX_CPU_LOAD 60
 static unsigned long max_cpu_load;
 
 /*
  * CPU freq will be decreased if measured load < min_cpu_load;
  */
-#define DEFAULT_MIN_CPU_LOAD 45
+#define DEFAULT_MIN_CPU_LOAD 30
 static unsigned long min_cpu_load;
 
 /*
@@ -161,10 +161,10 @@ static unsigned long debug_mask;
 static int cpufreq_governor_smartass(struct cpufreq_policy *policy,
 		unsigned int event);
 
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASS2
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASSV2
 static
 #endif
-struct cpufreq_governor cpufreq_gov_smartass2 = {
+struct cpufreq_governor cpufreq_gov_smartassv2 = {
 	.name = "smartassV2",
 	.governor = cpufreq_governor_smartass,
 	.max_transition_latency = 9000000,
@@ -845,10 +845,10 @@ static int __init cpufreq_smartass_init(void)
 
 	register_early_suspend(&smartass_power_suspend);
 
-	return cpufreq_register_governor(&cpufreq_gov_smartass2);
+	return cpufreq_register_governor(&cpufreq_gov_smartassv2);
 }
 
-#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASS2
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASSV2
 fs_initcall(cpufreq_smartass_init);
 #else
 module_init(cpufreq_smartass_init);
@@ -856,7 +856,7 @@ module_init(cpufreq_smartass_init);
 
 static void __exit cpufreq_smartass_exit(void)
 {
-	cpufreq_unregister_governor(&cpufreq_gov_smartass2);
+	cpufreq_unregister_governor(&cpufreq_gov_smartassv2);
 	destroy_workqueue(up_wq);
 	destroy_workqueue(down_wq);
 }
