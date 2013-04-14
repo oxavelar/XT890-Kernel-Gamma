@@ -293,10 +293,6 @@ on boot
     chmod 0660 /sys/devices/pci0000:00/0000:00:02.0/elvss_tth_status
     chown system system /sys/devices/pci0000:00/0000:00:02.0/elvss_tth_status
 
-service qe /xbin/qe /system
-    class main
-    oneshot
-
 # Access Token
 service atvc_core /system/bin/dbvc_atvc_property_set
     class main
