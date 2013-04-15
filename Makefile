@@ -25,7 +25,7 @@ CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.6/bin/i686-linux-android-
 NUMJOBS = `grep -c cores /proc/cpuinfo)`
 
 KBUILD_VERBOSE = 0
-ANDROID_TOOLCHAIN_FLAGS = -mno-android -O2 \
+ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
                  -m32 \
                  -march=atom \
                  -msse3 \
@@ -37,6 +37,7 @@ ANDROID_TOOLCHAIN_FLAGS = -mno-android -O2 \
                  -msahf \
                  -mmovbe \
                  -finline-functions \
+                 -fno-tree-vectorize \
                  --param l1-cache-size=24 \
                  --param l1-cache-line-size=64 \
                  --param l2-cache-size=512
