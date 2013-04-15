@@ -37,7 +37,6 @@ ANDROID_TOOLCHAIN_FLAGS = -mno-android -O2 \
                  -msahf \
                  -mmovbe \
                  -finline-functions \
-                 -ftree-vectorize \
                  --param l1-cache-size=24 \
                  --param l1-cache-line-size=64 \
                  --param l2-cache-size=512
