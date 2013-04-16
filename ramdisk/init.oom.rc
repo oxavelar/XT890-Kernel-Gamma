@@ -1,5 +1,5 @@
 #
-# Tweaks for the OOM killer for mfld platforms
+# Tweaks for the OOM killer for mfld platforms (oxavelar)
 #
 on boot
 # Define the oom_adj values for the classes of processes that can be
@@ -23,7 +23,7 @@ on boot
     setprop ro.HEAVY_WEIGHT_APP_MEM 12288
     setprop ro.SECONDARY_SERVER_MEM 14336
     setprop ro.BACKUP_APP_MEM 14336
-    setprop ro.HOME_APP_MEM 22528
+    setprop ro.HOME_APP_MEM 20480
     setprop ro.HIDDEN_APP_MEM 16384
     setprop ro.EMPTY_APP_MEM 20480
  
@@ -31,5 +31,5 @@ on boot
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first.
-    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
-    write /sys/module/lowmemorykiller/parameters/minfree 1536,3072,4096,12288,16384,25600
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,9,15
+    write /sys/module/lowmemorykiller/parameters/minfree 8192,10240,12288,14336,16384,20480
