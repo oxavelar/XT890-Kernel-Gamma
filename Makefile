@@ -17,11 +17,12 @@
 
 KVERSION = linux-3.0
 ARCH = i386
+KDEFCONFIG = i386_mfld_oxavelar_defconfig
 PLATFORM = $(PWD)
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 OUT_PATH = $(PLATFORM)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
-CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.6/bin/i686-linux-android-
+CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.7/bin/i686-linux-android-
 NUMJOBS = `grep -c cores /proc/cpuinfo)`
 
 KBUILD_VERBOSE = 0
@@ -49,8 +50,8 @@ BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=260046848 \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
-.PHONY: boot
-boot: kernel
+.PHONY: bootimage
+bootimage: kernel
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/ramdisk /tmp/smi-ramdisk
 	find $(KBUILD_OUT_PATH) -iname "*.ko" -exec cp \
@@ -76,9 +77,8 @@ kernel:
 	# I edited MAGIC_STRING to load Motorola's precompiled modules without issue
 	##define VERMAGIC_STRING \
 	#        "3.0.34-gc6f8fd7 SMP preempt mod_unload ATOM "
-	cp $(KSRC_PATH)/arch/x86/configs/i386_mfld_oxavelar_defconfig $(KBUILD_OUT_PATH)/.config
-	make -j$(NUMJOBS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) defoldconfig
-	make -j$(NUMJOBS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH)
+	make -j$(NUMJOBS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
+	make -j$(NUMJOBS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
 
 .PHONY: clean
 clean:
