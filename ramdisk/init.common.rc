@@ -40,13 +40,15 @@ on boot
     chmod 0664 /sys/class/backlight/psb-bl/max_brightness
     chmod 0664 /sys/class/backlight/psb-bl/actual_brightness
 
-    # Increasing write latencies for better battery
-    write /sys/block/mmcblk0/queue/nr_requests 512
-    write /sys/block/mmcblk1/queue/nr_requests 512
+    # Increasing write latencies for better battery ... but decreasing
+    # them will make memory benchmarks score higher
+    write /sys/block/mmcblk0/queue/nr_requests 2048
+    write /sys/block/mmcblk1/queue/nr_requests 2048
 
     # Reduce dirty memory size
-    write /proc/sys/vm/dirty_background_bytes 1048576
-    write /proc/sys/vm/dirty_bytes 20971520
+    write /proc/sys/vm/dirty_background_bytes 1024000
+    write /proc/sys/vm/dirty_bytes 20480000
+    write /proc/sys/vm/highmem_is_dirtyable 1
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576
@@ -73,8 +75,8 @@ on charger
     mount ext4 /dev/block/system /system ro noatime
     start pvrsrvctl
     # reduce backlight
-    write /sys/class/backlight/psb-bl/brightness 50
-    #default setting to enable charging in COS
+    write /sys/class/backlight/psb-bl/brightness 40
+    # Default setting to enable charging in COS
     setprop sys.usb.config charging
 
     # Reset counter watchdog at the end of system boot

@@ -237,16 +237,17 @@ on boot
 # level system server to be able to adjust the kernel OOM driver
 # parameters to match how it is managing things.
     write /proc/sys/vm/overcommit_memory 1
-    write /proc/sys/vm/overcommit_ratio=100
+    write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     chown root system /sys/module/lowmemorykiller/parameters/adj
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj
     chown root system /sys/module/lowmemorykiller/parameters/minfree
     chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
+    write /sys/module/lowmemorykiller/parameters/check_filepages 1
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 400
-    write /proc/sys/vm/dirty_writeback_centisecs 2000
+    write /proc/sys/vm/dirty_writeback_centisecs 1600
     write /proc/sys/vm/dirty_ratio 60
     write /proc/sys/vm/dirty_background_ratio 20
     write /proc/sys/vm/vfs_cache_pressure 50
