@@ -43,7 +43,7 @@
  * towards the ideal frequency and slower after it has passed it. Similarly,
  * lowering the frequency towards the ideal frequency is faster than below it.
  */
-#define DEFAULT_AWAKE_IDEAL_FREQ 1400000
+#define DEFAULT_AWAKE_IDEAL_FREQ 1600000
 static unsigned int awake_ideal_freq;
 
 /*
@@ -94,7 +94,7 @@ static unsigned long up_rate_us;
  * The minimum amount of time to spend at a frequency before we can ramp down.
  * Notice we ignore this when we are above the ideal frequency.
  */
-#define DEFAULT_DOWN_RATE_US 40000;
+#define DEFAULT_DOWN_RATE_US 30000;
 static unsigned long down_rate_us;
 
 /*
