@@ -46,7 +46,7 @@ ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
 export ANDROID_TOOLCHAIN_FLAGS KBUILD_VERBOSE
 export ARCH CROSS_COMPILE
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=201326592 \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=134217728 \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 

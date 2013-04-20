@@ -17,4 +17,4 @@ ro.debuggable=1
 service.adb.root=1
 wifi.interface=wlan0:0
 persist.ril-daemon.disable=0
-persist.sys.usb.config=mtp
+persist.sys.usb.config=adb
