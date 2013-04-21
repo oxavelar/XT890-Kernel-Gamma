@@ -26,7 +26,7 @@ PLATFORM = $(PWD)
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 OUT_PATH = $(PLATFORM)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
-#CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.7/bin/i686-linux-android-
+CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.7/bin/i686-linux-android-
 NUMJOBS = `grep -c cores /proc/cpuinfo)`
 
 KBUILD_VERBOSE = 0
@@ -61,10 +61,6 @@ ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
 export CFLAGS_platform_max17042.o       = -fno-tree-vectorize
 export CFLAGS_max17042_battery.o        = -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o       = -fno-tree-vectorize
-#export CFLAGS_platform_msic_battery.o   = -fno-tree-vectorize
-#export CFLAGS_platform_mid_pwm.o        = -fno-tree-vectorize
-#export CFLAGS_intel_mid_pwm.o           = -fno-tree-vectorize
-#export CFLAGS_power_supply.o            = -fno-tree-vectorize
 
 
 ################################################################################
