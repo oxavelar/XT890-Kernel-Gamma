@@ -61,9 +61,10 @@
 #include <linux/rbtree.h>
 #include <linux/ioprio.h>
 #include "bfq.h"
+#include "blk.h"
 
 /* Max number of dispatches in one round of service. */
-static const int bfq_quantum = 8;
+static const int bfq_quantum = 4;
 
 /* Expiration time of sync (0) and async (1) requests, in jiffies. */
 static const int bfq_fifo_expire[2] = { HZ / 4, HZ / 8 };
@@ -72,7 +73,7 @@ static const int bfq_fifo_expire[2] = { HZ / 4, HZ / 8 };
 static const int bfq_back_max = 16 * 1024;
 
 /* Penalty of a backwards seek, in number of sectors. */
-static const int bfq_back_penalty = 1;
+static const int bfq_back_penalty = 2;
 
 /* Idling period duration, in jiffies. */
 static int bfq_slice_idle = HZ / 125;
@@ -93,14 +94,6 @@ static const int bfq_timeout_sync = HZ / 8;
 static int bfq_timeout_async = HZ / 25;
 
 struct kmem_cache *bfq_pool;
-struct kmem_cache *bfq_ioc_pool;
-
-static DEFINE_PER_CPU(unsigned long, bfq_ioc_count);
-static struct completion *bfq_ioc_gone;
-static DEFINE_SPINLOCK(bfq_ioc_gone_lock);
-
-static DEFINE_SPINLOCK(cic_index_lock);
-static DEFINE_IDA(cic_index_ida);
 
 /* Below this threshold (in ms), we consider thinktime immediate. */
 #define BFQ_MIN_TT		2
@@ -118,12 +111,28 @@ static DEFINE_IDA(cic_index_ida);
 /* Shift used for peak rate fixed precision calculations. */
 #define BFQ_RATE_SHIFT		16
 
+/*
+ * The duration of the weight raising for interactive applications is
+ * computed automatically (as default behaviour), using the following
+ * formula: duration = (R / r) * T, where r is the peak rate of the
+ * disk, and R and T are two reference parameters. In particular, R is
+ * the peak rate of a reference disk, and T is about the maximum time
+ * for starting popular large applications on that disk, under BFQ and
+ * while reading two files in parallel. Finally, BFQ uses two
+ * different pairs (R, T) depending on whether the disk is rotational
+ * or non-rotational.
+ */
+#define T_rot			(msecs_to_jiffies(5500))
+#define T_nonrot		(msecs_to_jiffies(2000))
+/* Next two quantities are in sectors/usec, left-shifted by BFQ_RATE_SHIFT */
+#define R_rot			17415
+#define R_nonrot		34791
+
 #define BFQ_SERVICE_TREE_INIT	((struct bfq_service_tree)		\
 				{ RB_ROOT, RB_ROOT, NULL, NULL, 0, 0 })
 
-#define RQ_CIC(rq)		\
-	((struct cfq_io_context *) (rq)->elevator_private)
-#define RQ_BFQQ(rq)		((rq)->elevator_private2)
+#define RQ_BIC(rq)		((struct bfq_io_cq *) (rq)->elv.priv[0])
+#define RQ_BFQQ(rq)		((rq)->elv.priv[1])
 
 #include "bfq-ioc.c"
 #include "bfq-sched.c"
@@ -142,7 +151,7 @@ static DEFINE_IDA(cic_index_ida);
  */
 static inline int bfq_bio_sync(struct bio *bio)
 {
-	if (bio_data_dir(bio) == READ || (bio->bi_rw & BIO_RW_SYNCIO))
+	if (bio_data_dir(bio) == READ || (bio->bi_rw & REQ_SYNC))
 		return 1;
 
 	return 0;
@@ -158,13 +167,6 @@ static inline void bfq_schedule_dispatch(struct bfq_data *bfqd)
 		bfq_log(bfqd, "schedule dispatch");
 		kblockd_schedule_work(bfqd->queue, &bfqd->unplug_work);
 	}
-}
-
-static inline int bfq_queue_empty(struct request_queue *q)
-{
-	struct bfq_data *bfqd = q->elevator->elevator_data;
-
-	return bfqd->queued == 0;
 }
 
 /*
@@ -192,9 +194,9 @@ static struct request *bfq_choose_req(struct bfq_data *bfqd,
 		return rq1;
 	else if (rq_is_sync(rq2) && !rq_is_sync(rq1))
 		return rq2;
-	if (rq_is_meta(rq1) && !rq_is_meta(rq2))
+	if ((rq1->cmd_flags & REQ_META) && !(rq2->cmd_flags & REQ_META))
 		return rq1;
-	else if (rq_is_meta(rq2) && !rq_is_meta(rq1))
+	else if ((rq2->cmd_flags & REQ_META) && !(rq1->cmd_flags & REQ_META))
 		return rq2;
 
 	s1 = blk_rq_pos(rq1);
@@ -296,7 +298,8 @@ bfq_rq_pos_tree_lookup(struct bfq_data *bfqd, struct rb_root *root,
 	if (rb_link)
 		*rb_link = p;
 
-	bfq_log(bfqd, "rq_pos_tree_lookup %llu: returning %lu", sector,
+	bfq_log(bfqd, "rq_pos_tree_lookup %llu: returning %d",
+		(long long unsigned)sector,
 		bfqq != NULL ? bfqq->pid : 0);
 
 	return bfqq;
@@ -424,12 +427,25 @@ static void bfq_updated_next_req(struct bfq_data *bfqd,
 	bfq_activate_bfqq(bfqd, bfqq);
 }
 
+static inline unsigned int bfq_wrais_duration(struct bfq_data *bfqd)
+{
+	u64 dur;
+
+	if (bfqd->bfq_raising_max_time > 0)
+		return bfqd->bfq_raising_max_time;
+
+	dur = bfqd->RT_prod;
+	do_div(dur, bfqd->peak_rate);
+
+	return dur;
+}
+
 static void bfq_add_rq_rb(struct request *rq)
 {
 	struct bfq_queue *bfqq = RQ_BFQQ(rq);
 	struct bfq_entity *entity = &bfqq->entity;
 	struct bfq_data *bfqd = bfqq->bfqd;
-	struct request *__alias, *next_rq, *prev;
+	struct request *next_rq, *prev;
 	unsigned long old_raising_coeff = bfqq->raising_coeff;
 	int idle_for_long_time = bfqq->budget_timeout +
 		bfqd->bfq_raising_min_idle_time < jiffies;
@@ -438,12 +454,7 @@ static void bfq_add_rq_rb(struct request *rq)
 	bfqq->queued[rq_is_sync(rq)]++;
 	bfqd->queued++;
 
-	/*
-	 * Looks a little odd, but the first insert might return an alias,
-	 * if that happens, put the alias on the dispatch list.
-	 */
-	while ((__alias = elv_rb_add(&bfqq->sort_list, rq)) != NULL)
-		bfq_dispatch_insert(bfqd->queue, __alias);
+	elv_rb_add(&bfqq->sort_list, rq);
 
 	/*
 	 * Check if this request is a better next-serve candidate.
@@ -474,9 +485,12 @@ static void bfq_add_rq_rb(struct request *rq)
 		 */
 		if(old_raising_coeff == 1 && (idle_for_long_time || soft_rt)) {
 			bfqq->raising_coeff = bfqd->bfq_raising_coeff;
-			bfqq->raising_cur_max_time = idle_for_long_time ?
-				bfqd->bfq_raising_max_time :
-				bfqd->bfq_raising_rt_max_time;
+			if (idle_for_long_time)
+				bfqq->raising_cur_max_time =
+					bfq_wrais_duration(bfqd);
+			else
+				bfqq->raising_cur_max_time =
+					bfqd->bfq_raising_rt_max_time;
 			bfq_log_bfqq(bfqd, bfqq,
 				     "wrais starting at %llu msec,"
 				     "rais_max_time %u",
@@ -486,7 +500,7 @@ static void bfq_add_rq_rb(struct request *rq)
 		} else if (old_raising_coeff > 1) {
 			if (idle_for_long_time)
 				bfqq->raising_cur_max_time =
-					bfqd->bfq_raising_max_time;
+					bfq_wrais_duration(bfqd);
 			else if (bfqq->raising_cur_max_time ==
 				 bfqd->bfq_raising_rt_max_time &&
 				 !soft_rt) {
@@ -504,9 +518,12 @@ static void bfq_add_rq_rb(struct request *rq)
 add_bfqq_busy:
 		bfq_add_bfqq_busy(bfqd, bfqq);
         } else {
-                if(old_raising_coeff == 1 && bfqq->last_rais_start_finish +
-                        bfqd->bfq_raising_min_idle_time < jiffies) {
+                if(bfqd->low_latency && old_raising_coeff == 1 &&
+			!rq_is_sync(rq) &&
+			bfqq->last_rais_start_finish +
+                        bfqd->bfq_raising_min_inter_arr_async < jiffies) {
                         bfqq->raising_coeff = bfqd->bfq_raising_coeff;
+			bfqq->raising_cur_max_time = bfq_wrais_duration(bfqd);
 
 			entity->ioprio_changed = 1;
 			bfq_log_bfqq(bfqd, bfqq,
@@ -537,14 +554,14 @@ static struct request *bfq_find_rq_fmerge(struct bfq_data *bfqd,
 					  struct bio *bio)
 {
 	struct task_struct *tsk = current;
-	struct cfq_io_context *cic;
+	struct bfq_io_cq *bic;
 	struct bfq_queue *bfqq;
 
-	cic = bfq_cic_lookup(bfqd, tsk->io_context);
-	if (cic == NULL)
+	bic = bfq_bic_lookup(bfqd, tsk->io_context);
+	if (bic == NULL)
 		return NULL;
 
-	bfqq = cic_to_bfqq(cic, bfq_bio_sync(bio));
+	bfqq = bic_to_bfqq(bic, bfq_bio_sync(bio));
 	if (bfqq != NULL) {
 		sector_t sector = bio->bi_sector + bio_sectors(bio);
 
@@ -561,7 +578,7 @@ static void bfq_activate_request(struct request_queue *q, struct request *rq)
 	bfqd->rq_in_driver++;
 	bfqd->last_position = blk_rq_pos(rq) + blk_rq_sectors(rq);
 	bfq_log(bfqd, "activate_request: new bfqd->last_position %llu",
-		bfqd->last_position);
+		(long long unsigned)bfqd->last_position);
 }
 
 static void bfq_deactivate_request(struct request_queue *q, struct request *rq)
@@ -585,7 +602,7 @@ static void bfq_remove_request(struct request *rq)
 	list_del_init(&rq->queuelist);
 	bfq_del_rq_rb(rq);
 
-	if (rq_is_meta(rq)) {
+	if (rq->cmd_flags & REQ_META) {
 		WARN_ON(bfqq->meta_pending == 0);
 		bfqq->meta_pending--;
 	}
@@ -640,22 +657,25 @@ static int bfq_allow_merge(struct request_queue *q, struct request *rq,
 			   struct bio *bio)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
-	struct cfq_io_context *cic;
+	struct bfq_io_cq *bic;
 	struct bfq_queue *bfqq;
 
-	/* Disallow merge of a sync bio into an async request. */
+	/*
+	 * Disallow merge of a sync bio into an async request.
+	 */
 	if (bfq_bio_sync(bio) && !rq_is_sync(rq))
 		return 0;
 
 	/*
 	 * Lookup the bfqq that this bio will be queued with. Allow
 	 * merge only if rq is queued there.
+	 * Queue lock is held here.
 	 */
-	cic = bfq_cic_lookup(bfqd, current->io_context);
-	if (cic == NULL)
+	bic = bfq_bic_lookup(bfqd, current->io_context);
+	if (bic == NULL)
 		return 0;
 
-	bfqq = cic_to_bfqq(cic, bfq_bio_sync(bio));
+	bfqq = bic_to_bfqq(bic, bfq_bio_sync(bio));
 	return bfqq == RQ_BFQQ(rq);
 }
 
@@ -705,23 +725,12 @@ static inline sector_t bfq_dist_from_last(struct bfq_data *bfqd,
  * bfqd->last_position, or if rq is closer to bfqd->last_position than
  * bfqq->next_rq
  */
-static inline int bfq_rq_close(struct bfq_data *bfqd, struct bfq_queue *bfqq,
-			       struct request *rq)
+static inline int bfq_rq_close(struct bfq_data *bfqd, struct request *rq)
 {
-	sector_t sdist = bfqq->seek_mean;
-
-	if (!bfq_sample_valid(bfqq->seek_samples))
-		sdist = BFQQ_SEEK_THR;
-
-	/* If seek_mean is large, using it as close criteria is meaningless */
-	if (sdist > BFQQ_SEEK_THR)
-		sdist = BFQQ_SEEK_THR;
-
-	return bfq_dist_from_last(bfqd, rq) <= sdist;
+	return bfq_dist_from_last(bfqd, rq) <= BFQQ_SEEK_THR;
 }
 
-static struct bfq_queue *bfqq_close(struct bfq_data *bfqd,
-				    struct bfq_queue *cur_bfqq)
+static struct bfq_queue *bfqq_close(struct bfq_data *bfqd)
 {
 	struct rb_root *root = &bfqd->rq_pos_tree;
 	struct rb_node *parent, *node;
@@ -745,7 +754,7 @@ static struct bfq_queue *bfqq_close(struct bfq_data *bfqd,
 	 * position).
 	 */
 	__bfqq = rb_entry(parent, struct bfq_queue, pos_node);
-	if (bfq_rq_close(bfqd, cur_bfqq, __bfqq->next_rq))
+	if (bfq_rq_close(bfqd, __bfqq->next_rq))
 		return __bfqq;
 
 	if (blk_rq_pos(__bfqq->next_rq) < sector)
@@ -756,7 +765,7 @@ static struct bfq_queue *bfqq_close(struct bfq_data *bfqd,
 		return NULL;
 
 	__bfqq = rb_entry(node, struct bfq_queue, pos_node);
-	if (bfq_rq_close(bfqd, cur_bfqq, __bfqq->next_rq))
+	if (bfq_rq_close(bfqd, __bfqq->next_rq))
 		return __bfqq;
 
 	return NULL;
@@ -792,7 +801,7 @@ static struct bfq_queue *bfq_close_cooperator(struct bfq_data *bfqd,
 	 * working closely on the same area of the disk. In that case,
 	 * we can group them together and don't waste time idling.
 	 */
-	bfqq = bfqq_close(bfqd, cur_bfqq);
+	bfqq = bfqq_close(bfqd);
 	if (bfqq == NULL || bfqq == cur_bfqq)
 		return NULL;
 
@@ -826,8 +835,10 @@ static struct bfq_queue *bfq_close_cooperator(struct bfq_data *bfqd,
  */
 static inline unsigned long bfq_max_budget(struct bfq_data *bfqd)
 {
-	return bfqd->budgets_assigned < 194 ? bfq_default_max_budget :
-		bfqd->bfq_max_budget;
+	if (bfqd->budgets_assigned < 194)
+		return bfq_default_max_budget;
+	else
+		return bfqd->bfq_max_budget;
 }
 
 /*
@@ -836,25 +847,50 @@ static inline unsigned long bfq_max_budget(struct bfq_data *bfqd)
  */
 static inline unsigned long bfq_min_budget(struct bfq_data *bfqd)
 {
-	return bfqd->budgets_assigned < 194 ? bfq_default_max_budget / 32 :
-		bfqd->bfq_max_budget / 32;
+	if (bfqd->budgets_assigned < 194)
+		return bfq_default_max_budget;
+	else
+		return bfqd->bfq_max_budget / 32;
+}
+
+/*
+ * Decides whether idling should be done for given device and
+ * given active queue.
+ */
+static inline bool bfq_queue_nonrot_noidle(struct bfq_data *bfqd,
+					   struct bfq_queue *active_bfqq)
+{
+	if (active_bfqq == NULL)
+		return false;
+	/*
+	 * If device is SSD it has no seek penalty, disable idling; but
+	 * do so only if:
+	 * - device does not support queuing, otherwise we still have
+	 *   a problem with sync vs async workloads;
+	 * - the queue is not weight-raised, to preserve guarantees.
+	 */
+	return (blk_queue_nonrot(bfqd->queue) && bfqd->hw_tag &&
+		active_bfqq->raising_coeff == 1);
 }
 
 static void bfq_arm_slice_timer(struct bfq_data *bfqd)
 {
 	struct bfq_queue *bfqq = bfqd->active_queue;
-	struct cfq_io_context *cic;
+	struct bfq_io_cq *bic;
 	unsigned long sl;
 
 	WARN_ON(!RB_EMPTY_ROOT(&bfqq->sort_list));
+
+	if (bfq_queue_nonrot_noidle(bfqd, bfqq))
+		return;
 
 	/* Idling is disabled, either manually or by past process history. */
 	if (bfqd->bfq_slice_idle == 0 || !bfq_bfqq_idle_window(bfqq))
 		return;
 
 	/* Tasks have exited, don't wait. */
-	cic = bfqd->active_cic;
-	if (cic == NULL || atomic_read(&cic->ioc->nr_tasks) == 0)
+	bic = bfqd->active_bic;
+	if (bic == NULL || atomic_read(&bic->icq.ioc->nr_tasks) == 0)
 		return;
 
 	bfq_mark_bfqq_wait_request(bfqq);
@@ -878,7 +914,7 @@ static void bfq_arm_slice_timer(struct bfq_data *bfqd)
 		sl = sl * 3;
 	bfqd->last_idling_start = ktime_get();
 	mod_timer(&bfqd->idle_slice_timer, jiffies + sl);
-	bfq_log(bfqd, "arm idle: %lu/%lu ms",
+	bfq_log(bfqd, "arm idle: %u/%u ms",
 		jiffies_to_msecs(sl), jiffies_to_msecs(bfqd->bfq_slice_idle));
 }
 
@@ -890,9 +926,11 @@ static void bfq_arm_slice_timer(struct bfq_data *bfqd)
 static void bfq_set_budget_timeout(struct bfq_data *bfqd)
 {
 	struct bfq_queue *bfqq = bfqd->active_queue;
-	unsigned int timeout_coeff =
-		bfqq->raising_cur_max_time == bfqd->bfq_raising_rt_max_time ?
-		1 : (bfqq->entity.weight / bfqq->entity.orig_weight);
+	unsigned int timeout_coeff;
+	if (bfqq->raising_cur_max_time == bfqd->bfq_raising_rt_max_time)
+		timeout_coeff = 1;
+	else
+		timeout_coeff = bfqq->entity.weight / bfqq->entity.orig_weight;
 
 	bfqd->last_budget_start = ktime_get();
 
@@ -952,7 +990,7 @@ static int bfqq_process_refs(struct bfq_queue *bfqq)
 	int process_refs, io_refs;
 
 	io_refs = bfqq->allocated[READ] + bfqq->allocated[WRITE];
-	process_refs = atomic_read(&bfqq->ref) - io_refs;
+	process_refs = atomic_read(&bfqq->ref) - io_refs - bfqq->entity.on_st;
 	BUG_ON(process_refs < 0);
 	return process_refs;
 }
@@ -1021,8 +1059,7 @@ static void __bfq_bfqq_expire(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 		 * the weight-raising mechanism
 		 */
 		bfqq->budget_timeout = jiffies ;
-	}
-	else {
+	} else {
 		bfq_activate_bfqq(bfqd, bfqq);
 		/*
 		 * Resort priority tree of potential close cooperators.
@@ -1166,7 +1203,7 @@ static void __bfq_bfqq_recalc_budget(struct bfq_data *bfqd,
 	else
 		bfqq->entity.budget = bfqq->max_budget;
 
-	bfq_log_bfqq(bfqd, bfqq, "head sect: %lu, new budget %lu",
+	bfq_log_bfqq(bfqd, bfqq, "head sect: %u, new budget %lu",
 			next_rq != NULL ? blk_rq_sectors(next_rq) : 0,
 			bfqq->entity.budget);
 }
@@ -1203,7 +1240,10 @@ static int bfq_update_peak_rate(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 	if (!bfq_bfqq_sync(bfqq) || bfq_bfqq_budget_new(bfqq))
 		return 0;
 
-	delta = compensate ? bfqd->last_idling_start : ktime_get();
+	if (compensate)
+		delta = bfqd->last_idling_start;
+	else
+		delta = ktime_get();
 	delta = ktime_sub(delta, bfqd->last_budget_start);
 	usecs = ktime_to_us(delta);
 
@@ -1480,7 +1520,8 @@ static struct bfq_queue *bfq_select_queue(struct bfq_data *bfqd)
 	 * then keep it.
 	 */
 	if (new_bfqq == NULL && (timer_pending(&bfqd->idle_slice_timer) ||
-		(bfqq->dispatched != 0 && bfq_bfqq_idle_window(bfqq)))) {
+		(bfqq->dispatched != 0 && bfq_bfqq_idle_window(bfqq) &&
+		 !bfq_queue_nonrot_noidle(bfqd, bfqq)))) {
 		bfqq = NULL;
 		goto keep_queue;
 	} else if (new_bfqq != NULL && timer_pending(&bfqd->idle_slice_timer)) {
@@ -1497,7 +1538,7 @@ expire:
 	bfq_bfqq_expire(bfqd, bfqq, 0, reason);
 new_queue:
 	bfqq = bfq_set_active_queue(bfqd, new_bfqq);
-	bfq_log(bfqd, "select_queue: new queue %lu returned",
+	bfq_log(bfqd, "select_queue: new queue %d returned",
 		bfqq != NULL ? bfqq->pid : 0);
 keep_queue:
 	return bfqq;
@@ -1537,6 +1578,12 @@ static void update_raising_data(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 				bfqq->raising_cur_max_time =
 					bfqd->bfq_raising_rt_max_time;
 			else {
+				bfq_log_bfqq(bfqd, bfqq,
+					     "wrais ending at %llu msec,"
+					     "rais_max_time %u",
+					     bfqq->last_rais_start_finish,
+					     jiffies_to_msecs(bfqq->
+						raising_cur_max_time));
 				bfqq->raising_coeff = 1;
 				entity->ioprio_changed = 1;
 				__bfq_entity_update_weight_prio(
@@ -1608,9 +1655,9 @@ static int bfq_dispatch_request(struct bfq_data *bfqd,
 
 	dispatched++;
 
-	if (bfqd->active_cic == NULL) {
-		atomic_long_inc(&RQ_CIC(rq)->ioc->refcount);
-		bfqd->active_cic = RQ_CIC(rq);
+	if (bfqd->active_bic == NULL) {
+		atomic_long_inc(&RQ_BIC(rq)->icq.ioc->refcount);
+		bfqd->active_bic = RQ_BIC(rq);
 	}
 
 	if (bfqd->busy_queues > 1 && ((!bfq_bfqq_sync(bfqq) &&
@@ -1728,7 +1775,8 @@ static void bfq_put_queue(struct bfq_queue *bfqq)
 
 	BUG_ON(atomic_read(&bfqq->ref) <= 0);
 
-	bfq_log_bfqq(bfqd, bfqq, "put_queue: %p %d", bfqq, bfqq->ref);
+	bfq_log_bfqq(bfqd, bfqq, "put_queue: %p %d", bfqq,
+		     atomic_read(&bfqq->ref));
 	if (!atomic_dec_and_test(&bfqq->ref))
 		return;
 
@@ -1771,11 +1819,35 @@ static void bfq_exit_bfqq(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 		bfq_schedule_dispatch(bfqd);
 	}
 
-	bfq_log_bfqq(bfqd, bfqq, "exit_bfqq: %p, %d", bfqq, bfqq->ref);
+	bfq_log_bfqq(bfqd, bfqq, "exit_bfqq: %p, %d", bfqq,
+		     atomic_read(&bfqq->ref));
 
 	bfq_put_cooperator(bfqq);
 
 	bfq_put_queue(bfqq);
+}
+
+static void bfq_init_icq(struct io_cq *icq)
+{
+	struct bfq_io_cq *bic = icq_to_bic(icq);
+
+	bic->ttime.last_end_request = jiffies;
+}
+
+static void bfq_exit_icq(struct io_cq *icq)
+{
+	struct bfq_io_cq *bic = icq_to_bic(icq);
+	struct bfq_data *bfqd = bic_to_bfqd(bic);
+
+	if (bic->bfqq[BLK_RW_ASYNC]) {
+		bfq_exit_bfqq(bfqd, bic->bfqq[BLK_RW_ASYNC]);
+		bic->bfqq[BLK_RW_ASYNC] = NULL;
+	}
+
+	if (bic->bfqq[BLK_RW_SYNC]) {
+		bfq_exit_bfqq(bfqd, bic->bfqq[BLK_RW_SYNC]);
+		bic->bfqq[BLK_RW_SYNC] = NULL;
+	}
 }
 
 /*
@@ -1823,38 +1895,37 @@ static void bfq_init_prio_data(struct bfq_queue *bfqq, struct io_context *ioc)
 	 * elevate the priority of this queue.
 	 */
 	bfqq->org_ioprio = bfqq->entity.new_ioprio;
-	bfqq->org_ioprio_class = bfqq->entity.new_ioprio_class;
 	bfq_clear_bfqq_prio_changed(bfqq);
 }
 
 static void bfq_changed_ioprio(struct io_context *ioc,
-			       struct cfq_io_context *cic)
+			       struct bfq_io_cq *bic)
 {
 	struct bfq_data *bfqd;
 	struct bfq_queue *bfqq, *new_bfqq;
 	struct bfq_group *bfqg;
 	unsigned long uninitialized_var(flags);
 
-	bfqd = bfq_get_bfqd_locked(&cic->key, &flags);
+	bfqd = bfq_get_bfqd_locked(&(bic->icq.q->elevator->elevator_data), &flags);
 	if (unlikely(bfqd == NULL))
 		return;
 
-	bfqq = cic->cfqq[BLK_RW_ASYNC];
+	bfqq = bic->bfqq[BLK_RW_ASYNC];
 	if (bfqq != NULL) {
 		bfqg = container_of(bfqq->entity.sched_data, struct bfq_group,
 				    sched_data);
-		new_bfqq = bfq_get_queue(bfqd, bfqg, BLK_RW_ASYNC, cic->ioc,
+		new_bfqq = bfq_get_queue(bfqd, bfqg, BLK_RW_ASYNC, bic->icq.ioc,
 					 GFP_ATOMIC);
 		if (new_bfqq != NULL) {
-			cic->cfqq[BLK_RW_ASYNC] = new_bfqq;
+			bic->bfqq[BLK_RW_ASYNC] = new_bfqq;
 			bfq_log_bfqq(bfqd, bfqq,
 				     "changed_ioprio: bfqq %p %d",
-				     bfqq, bfqq->ref);
+				     bfqq, atomic_read(&bfqq->ref));
 			bfq_put_queue(bfqq);
 		}
 	}
 
-	bfqq = cic->cfqq[BLK_RW_SYNC];
+	bfqq = bic->bfqq[BLK_RW_SYNC];
 	if (bfqq != NULL)
 		bfq_mark_bfqq_prio_changed(bfqq);
 
@@ -1894,12 +1965,12 @@ static struct bfq_queue *bfq_find_alloc_queue(struct bfq_data *bfqd,
 					      gfp_t gfp_mask)
 {
 	struct bfq_queue *bfqq, *new_bfqq = NULL;
-	struct cfq_io_context *cic;
+	struct bfq_io_cq *bic;
 
 retry:
-	cic = bfq_cic_lookup(bfqd, ioc);
-	/* cic always exists here */
-	bfqq = cic_to_bfqq(cic, is_sync);
+	bic = bfq_bic_lookup(bfqd, ioc);
+	/* bic always exists here */
+	bfqq = bic_to_bfqq(bic, is_sync);
 
 	/*
 	 * Always try a new alloc if we fall back to the OOM bfqq
@@ -1982,24 +2053,25 @@ static struct bfq_queue *bfq_get_queue(struct bfq_data *bfqd,
 	if (!is_sync && *async_bfqq == NULL) {
 		atomic_inc(&bfqq->ref);
 		bfq_log_bfqq(bfqd, bfqq, "get_queue, bfqq not in async: %p, %d",
-			     bfqq, bfqq->ref);
+			     bfqq, atomic_read(&bfqq->ref));
 		*async_bfqq = bfqq;
 	}
 
 	atomic_inc(&bfqq->ref);
-	bfq_log_bfqq(bfqd, bfqq, "get_queue, at end: %p, %d", bfqq, bfqq->ref);
+	bfq_log_bfqq(bfqd, bfqq, "get_queue, at end: %p, %d", bfqq,
+		     atomic_read(&bfqq->ref));
 	return bfqq;
 }
 
 static void bfq_update_io_thinktime(struct bfq_data *bfqd,
-				    struct cfq_io_context *cic)
+				    struct bfq_io_cq *bic)
 {
-	unsigned long elapsed = jiffies - cic->last_end_request;
+	unsigned long elapsed = jiffies - bic->ttime.last_end_request;
 	unsigned long ttime = min(elapsed, 2UL * bfqd->bfq_slice_idle);
 
-	cic->ttime_samples = (7*cic->ttime_samples + 256) / 8;
-	cic->ttime_total = (7*cic->ttime_total + 256*ttime) / 8;
-	cic->ttime_mean = (cic->ttime_total + 128) / cic->ttime_samples;
+	bic->ttime.ttime_samples = (7*bic->ttime.ttime_samples + 256) / 8;
+	bic->ttime.ttime_total = (7*bic->ttime.ttime_total + 256*ttime) / 8;
+	bic->ttime.ttime_mean = (bic->ttime.ttime_total + 128) / bic->ttime.ttime_samples;
 }
 
 static void bfq_update_io_seektime(struct bfq_data *bfqd,
@@ -2054,7 +2126,7 @@ static void bfq_update_io_seektime(struct bfq_data *bfqd,
  */
 static void bfq_update_idle_window(struct bfq_data *bfqd,
 				   struct bfq_queue *bfqq,
-				   struct cfq_io_context *cic)
+				   struct bfq_io_cq *bic)
 {
 	int enable_idle;
 
@@ -2064,13 +2136,13 @@ static void bfq_update_idle_window(struct bfq_data *bfqd,
 
 	enable_idle = bfq_bfqq_idle_window(bfqq);
 
-	if (atomic_read(&cic->ioc->nr_tasks) == 0 ||
+	if (atomic_read(&bic->icq.ioc->nr_tasks) == 0 ||
 	    bfqd->bfq_slice_idle == 0 ||
 		(bfqd->hw_tag && BFQQ_SEEKY(bfqq) &&
 			bfqq->raising_coeff == 1))
 		enable_idle = 0;
-	else if (bfq_sample_valid(cic->ttime_samples)) {
-		if (cic->ttime_mean > bfqd->bfq_slice_idle &&
+	else if (bfq_sample_valid(bic->ttime.ttime_samples)) {
+		if (bic->ttime.ttime_mean > bfqd->bfq_slice_idle &&
 			bfqq->raising_coeff == 1)
 			enable_idle = 0;
 		else
@@ -2092,31 +2164,31 @@ static void bfq_update_idle_window(struct bfq_data *bfqd,
 static void bfq_rq_enqueued(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 			    struct request *rq)
 {
-	struct cfq_io_context *cic = RQ_CIC(rq);
+	struct bfq_io_cq *bic = RQ_BIC(rq);
 
-	if (rq_is_meta(rq))
+	if (rq->cmd_flags & REQ_META)
 		bfqq->meta_pending++;
 
-	bfq_update_io_thinktime(bfqd, cic);
+	bfq_update_io_thinktime(bfqd, bic);
 	bfq_update_io_seektime(bfqd, bfqq, rq);
 	if (bfqq->entity.service > bfq_max_budget(bfqd) / 8 ||
 	    !BFQQ_SEEKY(bfqq))
-		bfq_update_idle_window(bfqd, bfqq, cic);
+		bfq_update_idle_window(bfqd, bfqq, bic);
 
 	bfq_log_bfqq(bfqd, bfqq,
 		     "rq_enqueued: idle_window=%d (seeky %d, mean %llu)",
 		     bfq_bfqq_idle_window(bfqq), BFQQ_SEEKY(bfqq),
-		     bfqq->seek_mean);
+		     (long long unsigned)bfqq->seek_mean);
 
 	bfqq->last_request_pos = blk_rq_pos(rq) + blk_rq_sectors(rq);
 
 	if (bfqq == bfqd->active_queue) {
 		/*
 		 * If there is just this request queued and the request
-		 * is small, just make sure the queue is plugged and exit.
+		 * is small, just exit.
 		 * In this way, if the disk is being idled to wait for a new
 		 * request from the active queue, we avoid unplugging the
-		 * device for this request.
+		 * device now.
 		 *
 		 * By doing so, we spare the disk to be committed
 		 * to serve just a small request. On the contrary, we wait for
@@ -2127,7 +2199,6 @@ static void bfq_rq_enqueued(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 		 */
 	        if (bfqq->queued[rq_is_sync(rq)] == 1 &&
 		    blk_rq_sectors(rq) < 32) {
-			blk_plug_device(bfqd->queue);
 		        return;
 		}
 		if (bfq_bfqq_wait_request(bfqq)) {
@@ -2157,7 +2228,7 @@ static void bfq_insert_request(struct request_queue *q, struct request *rq)
 	struct bfq_queue *bfqq = RQ_BFQQ(rq);
 
 	assert_spin_locked(bfqd->queue->queue_lock);
-	bfq_init_prio_data(bfqq, RQ_CIC(rq)->ioc);
+	bfq_init_prio_data(bfqq, RQ_BIC(rq)->icq.ioc);
 
 	bfq_add_rq_rb(rq);
 
@@ -2171,6 +2242,9 @@ static void bfq_update_hw_tag(struct bfq_data *bfqd)
 {
 	bfqd->max_rq_in_driver = max(bfqd->max_rq_in_driver,
 				     bfqd->rq_in_driver);
+
+	if (bfqd->hw_tag == 1)
+		return;
 
 	/*
 	 * This sample is valid if the number of outstanding requests
@@ -2195,7 +2269,7 @@ static void bfq_completed_request(struct request_queue *q, struct request *rq)
 	struct bfq_data *bfqd = bfqq->bfqd;
 	const int sync = rq_is_sync(rq);
 
-	bfq_log_bfqq(bfqd, bfqq, "completed %lu sects req (%d)",
+	bfq_log_bfqq(bfqd, bfqq, "completed %u sects req (%d)",
 			blk_rq_sectors(rq), sync);
 
 	bfq_update_hw_tag(bfqd);
@@ -2209,7 +2283,7 @@ static void bfq_completed_request(struct request_queue *q, struct request *rq)
 		bfqd->sync_flight--;
 
 	if (sync)
-		RQ_CIC(rq)->last_end_request = jiffies;
+		RQ_BIC(rq)->ttime.last_end_request = jiffies;
 
 	/*
 	 * If this is the active queue, check if it needs to be expired,
@@ -2244,30 +2318,6 @@ static void bfq_completed_request(struct request_queue *q, struct request *rq)
 		bfq_schedule_dispatch(bfqd);
 }
 
-/*
- * We temporarily boost lower priority queues if they are holding fs exclusive
- * resources.  They are boosted to normal prio (CLASS_BE/4).
- */
-static void bfq_prio_boost(struct bfq_queue *bfqq)
-{
-	if (has_fs_excl()) {
-		/*
-		 * Boost idle prio on transactions that would lock out other
-		 * users of the filesystem
-		 */
-		if (bfq_class_idle(bfqq))
-			bfqq->entity.new_ioprio_class = IOPRIO_CLASS_BE;
-		if (bfqq->entity.new_ioprio > IOPRIO_NORM)
-			bfqq->entity.new_ioprio = IOPRIO_NORM;
-	} else {
-		/*
-		 * Unboost the queue (if needed)
-		 */
-		bfqq->entity.new_ioprio_class = bfqq->org_ioprio_class;
-		bfqq->entity.new_ioprio = bfqq->org_ioprio;
-	}
-}
-
 static inline int __bfq_may_queue(struct bfq_queue *bfqq)
 {
 	if (bfq_bfqq_wait_request(bfqq) && bfq_bfqq_must_alloc(bfqq)) {
@@ -2282,7 +2332,7 @@ static int bfq_may_queue(struct request_queue *q, int rw)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
 	struct task_struct *tsk = current;
-	struct cfq_io_context *cic;
+	struct bfq_io_cq *bic;
 	struct bfq_queue *bfqq;
 
 	/*
@@ -2291,14 +2341,13 @@ static int bfq_may_queue(struct request_queue *q, int rw)
 	 * So just lookup a possibly existing queue, or return 'may queue'
 	 * if that fails.
 	 */
-	cic = bfq_cic_lookup(bfqd, tsk->io_context);
-	if (cic == NULL)
+	bic = bfq_bic_lookup(bfqd, tsk->io_context);
+	if (bic == NULL)
 		return ELV_MQUEUE_MAY;
 
-	bfqq = cic_to_bfqq(cic, rw_is_sync(rw));
+	bfqq = bic_to_bfqq(bic, rw_is_sync(rw));
 	if (bfqq != NULL) {
-		bfq_init_prio_data(bfqq, cic->ioc);
-		bfq_prio_boost(bfqq);
+		bfq_init_prio_data(bfqq, bic->icq.ioc);
 
 		return __bfq_may_queue(bfqq);
 	}
@@ -2319,27 +2368,25 @@ static void bfq_put_request(struct request *rq)
 		BUG_ON(!bfqq->allocated[rw]);
 		bfqq->allocated[rw]--;
 
-		put_io_context(RQ_CIC(rq)->ioc);
-
-		rq->elevator_private = NULL;
-		rq->elevator_private2 = NULL;
+		rq->elv.priv[0] = NULL;
+		rq->elv.priv[1] = NULL;
 
 		bfq_log_bfqq(bfqq->bfqd, bfqq, "put_request %p, %d",
-			     bfqq, bfqq->ref);
+			     bfqq, atomic_read(&bfqq->ref));
 		bfq_put_queue(bfqq);
 	}
 }
 
 static struct bfq_queue *
-bfq_merge_bfqqs(struct bfq_data *bfqd, struct cfq_io_context *cic,
+bfq_merge_bfqqs(struct bfq_data *bfqd, struct bfq_io_cq *bic,
                 struct bfq_queue *bfqq)
 {
         bfq_log_bfqq(bfqd, bfqq, "merging with queue %lu",
-		bfqq->new_bfqq->pid);
-        cic_set_bfqq(cic, bfqq->new_bfqq, 1);
+		(long unsigned)bfqq->new_bfqq->pid);
+        bic_set_bfqq(bic, bfqq->new_bfqq, 1);
         bfq_mark_bfqq_coop(bfqq->new_bfqq);
         bfq_put_queue(bfqq);
-        return cic_to_bfqq(cic, 1);
+        return bic_to_bfqq(bic, 1);
 }
 
 /*
@@ -2347,7 +2394,7 @@ bfq_merge_bfqqs(struct bfq_data *bfqd, struct cfq_io_context *cic,
  * was the last process referring to said bfqq.
  */
 static struct bfq_queue *
-bfq_split_bfqq(struct cfq_io_context *cic, struct bfq_queue *bfqq)
+bfq_split_bfqq(struct bfq_io_cq *bic, struct bfq_queue *bfqq)
 {
 	bfq_log_bfqq(bfqq->bfqd, bfqq, "splitting queue");
 	if (bfqq_process_refs(bfqq) == 1) {
@@ -2358,7 +2405,7 @@ bfq_split_bfqq(struct cfq_io_context *cic, struct bfq_queue *bfqq)
 		return bfqq;
 	}
 
-	cic_set_bfqq(cic, NULL, 1);
+	bic_set_bfqq(bic, NULL, 1);
 
 	bfq_put_cooperator(bfqq);
 
@@ -2373,36 +2420,39 @@ static int bfq_set_request(struct request_queue *q, struct request *rq,
 			   gfp_t gfp_mask)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
-	struct cfq_io_context *cic;
+	struct bfq_io_cq *bic = icq_to_bic(rq->elv.icq);
 	const int rw = rq_data_dir(rq);
 	const int is_sync = rq_is_sync(rq);
 	struct bfq_queue *bfqq;
 	struct bfq_group *bfqg;
 	unsigned long flags;
 
-	might_sleep_if(gfp_mask & __GFP_WAIT);
+	/* handle changed prio notifications; cgroup change is handled separately */
+	if (unlikely(bic->icq.changed))
+		if (test_and_clear_bit(ICQ_IOPRIO_CHANGED, &bic->icq.changed))
+			bfq_changed_ioprio(bic->icq.ioc, bic);
 
-	cic = bfq_get_io_context(bfqd, gfp_mask);
+	might_sleep_if(gfp_mask & __GFP_WAIT);
 
 	spin_lock_irqsave(q->queue_lock, flags);
 
-	if (cic == NULL)
+	if (bic == NULL)
 		goto queue_fail;
 
-	bfqg = bfq_cic_update_cgroup(cic);
+	bfqg = bfq_bic_update_cgroup(bic);
 
 new_queue:
-	bfqq = cic_to_bfqq(cic, is_sync);
+	bfqq = bic_to_bfqq(bic, is_sync);
 	if (bfqq == NULL || bfqq == &bfqd->oom_bfqq) {
-		bfqq = bfq_get_queue(bfqd, bfqg, is_sync, cic->ioc, gfp_mask);
-		cic_set_bfqq(cic, bfqq, is_sync);
+		bfqq = bfq_get_queue(bfqd, bfqg, is_sync, bic->icq.ioc, gfp_mask);
+		bic_set_bfqq(bic, bfqq, is_sync);
 	} else {
 		/*
 		 * If the queue was seeky for too long, break it apart.
 		 */
 		if (bfq_bfqq_coop(bfqq) && bfq_bfqq_split_coop(bfqq)) {
 			bfq_log_bfqq(bfqd, bfqq, "breaking apart bfqq");
-			bfqq = bfq_split_bfqq(cic, bfqq);
+			bfqq = bfq_split_bfqq(bic, bfqq);
 			if (!bfqq)
 				goto new_queue;
 		}
@@ -2414,24 +2464,22 @@ new_queue:
 		 * The reference on new_bfqq was taken in merge_bfqqs.
 		 */
 		if (bfqq->new_bfqq != NULL)
-			bfqq = bfq_merge_bfqqs(bfqd, cic, bfqq);
+			bfqq = bfq_merge_bfqqs(bfqd, bic, bfqq);
 	}
 
 	bfqq->allocated[rw]++;
 	atomic_inc(&bfqq->ref);
-	bfq_log_bfqq(bfqd, bfqq, "set_request: bfqq %p, %d", bfqq, bfqq->ref);
+	bfq_log_bfqq(bfqd, bfqq, "set_request: bfqq %p, %d", bfqq,
+		     atomic_read(&bfqq->ref));
+
+	rq->elv.priv[0] = bic;
+	rq->elv.priv[1] = bfqq;
 
 	spin_unlock_irqrestore(q->queue_lock, flags);
-
-	rq->elevator_private = cic;
-	rq->elevator_private2 = bfqq;
 
 	return 0;
 
 queue_fail:
-	if (cic != NULL)
-		put_io_context(cic->ioc);
-
 	bfq_schedule_dispatch(bfqd);
 	spin_unlock_irqrestore(q->queue_lock, flags);
 
@@ -2516,7 +2564,7 @@ static inline void __bfq_put_async_bfqq(struct bfq_data *bfqd,
 	if (bfqq != NULL) {
 		bfq_bfqq_move(bfqd, bfqq, &bfqq->entity, root_group);
 		bfq_log_bfqq(bfqd, bfqq, "put_async_bfqq: putting %p, %d",
-			     bfqq, bfqq->ref);
+			     bfqq, atomic_read(&bfqq->ref));
 		bfq_put_queue(bfqq);
 		*bfqq_ptr = NULL;
 	}
@@ -2544,17 +2592,10 @@ static void bfq_exit_queue(struct elevator_queue *e)
 	struct bfq_data *bfqd = e->elevator_data;
 	struct request_queue *q = bfqd->queue;
 	struct bfq_queue *bfqq, *n;
-	struct cfq_io_context *cic;
 
 	bfq_shutdown_timer_wq(bfqd);
 
 	spin_lock_irq(q->queue_lock);
-
-	while (!list_empty(&bfqd->cic_list)) {
-		cic = list_entry(bfqd->cic_list.next, struct cfq_io_context,
-				 queue_list);
-		__bfq_exit_single_io_context(bfqd, cic);
-	}
 
 	BUG_ON(bfqd->active_queue != NULL);
 	list_for_each_entry_safe(bfqq, n, &bfqd->idle_list, bfqq_list)
@@ -2565,11 +2606,6 @@ static void bfq_exit_queue(struct elevator_queue *e)
 
 	bfq_shutdown_timer_wq(bfqd);
 
-	spin_lock(&cic_index_lock);
-	ida_remove(&cic_index_ida, bfqd->cic_index);
-	spin_unlock(&cic_index_lock);
-
-	/* Wait for cic->key accessors to exit their grace periods. */
 	synchronize_rcu();
 
 	BUG_ON(timer_pending(&bfqd->idle_slice_timer));
@@ -2578,39 +2614,14 @@ static void bfq_exit_queue(struct elevator_queue *e)
 	kfree(bfqd);
 }
 
-static int bfq_alloc_cic_index(void)
-{
-	int index, error;
-
-	do {
-		if (!ida_pre_get(&cic_index_ida, GFP_KERNEL))
-			return -ENOMEM;
-
-		spin_lock(&cic_index_lock);
-		error = ida_get_new(&cic_index_ida, &index);
-		spin_unlock(&cic_index_lock);
-		if (error && error != -EAGAIN)
-			return error;
-	} while (error);
-
-	return index;
-}
-
 static void *bfq_init_queue(struct request_queue *q)
 {
 	struct bfq_group *bfqg;
 	struct bfq_data *bfqd;
-	int i;
-
-	i = bfq_alloc_cic_index();
-	if (i < 0)
-		return NULL;
 
 	bfqd = kmalloc_node(sizeof(*bfqd), GFP_KERNEL | __GFP_ZERO, q->node);
 	if (bfqd == NULL)
 		return NULL;
-
-	bfqd->cic_index = i;
 
 	/*
 	 * Our fallback bfqq if bfq_find_alloc_queue() runs into OOM issues.
@@ -2619,8 +2630,6 @@ static void *bfq_init_queue(struct request_queue *q)
 	 */
 	bfq_init_bfqq(bfqd, &bfqd->oom_bfqq, 1, 0);
 	atomic_inc(&bfqd->oom_bfqq.ref);
-
-	INIT_LIST_HEAD(&bfqd->cic_list);
 
 	bfqd->queue = q;
 
@@ -2643,7 +2652,7 @@ static void *bfq_init_queue(struct request_queue *q)
 	INIT_LIST_HEAD(&bfqd->active_list);
 	INIT_LIST_HEAD(&bfqd->idle_list);
 
-	bfqd->hw_tag = 1;
+	bfqd->hw_tag = -1;
 
 	bfqd->bfq_max_budget = bfq_default_max_budget;
 
@@ -2662,9 +2671,19 @@ static void *bfq_init_queue(struct request_queue *q)
 
 	bfqd->bfq_raising_coeff = 20;
 	bfqd->bfq_raising_rt_max_time = msecs_to_jiffies(300);
-	bfqd->bfq_raising_max_time = msecs_to_jiffies(7500);
+	bfqd->bfq_raising_max_time = 0;
 	bfqd->bfq_raising_min_idle_time = msecs_to_jiffies(2000);
+	bfqd->bfq_raising_min_inter_arr_async = msecs_to_jiffies(500);
 	bfqd->bfq_raising_max_softrt_rate = 7000;
+
+	/* Initially estimate the device's peak rate as the reference rate */
+	if (blk_queue_nonrot(bfqd->queue)) {
+		bfqd->RT_prod = R_nonrot * T_nonrot;
+		bfqd->peak_rate = R_nonrot;
+	} else {
+		bfqd->RT_prod = R_rot * T_rot;
+		bfqd->peak_rate = R_rot;
+	}
 
 	return bfqd;
 }
@@ -2673,27 +2692,14 @@ static void bfq_slab_kill(void)
 {
 	if (bfq_pool != NULL)
 		kmem_cache_destroy(bfq_pool);
-	if (bfq_ioc_pool != NULL)
-		kmem_cache_destroy(bfq_ioc_pool);
 }
 
 static int __init bfq_slab_setup(void)
 {
 	bfq_pool = KMEM_CACHE(bfq_queue, 0);
 	if (bfq_pool == NULL)
-		goto fail;
-
-	bfq_ioc_pool = kmem_cache_create("bfq_io_context",
-					 sizeof(struct cfq_io_context),
-					 __alignof__(struct cfq_io_context),
-					 0, NULL);
-	if (bfq_ioc_pool == NULL)
-		goto fail;
-
+		return -ENOMEM;
 	return 0;
-fail:
-	bfq_slab_kill();
-	return -ENOMEM;
 }
 
 static ssize_t bfq_var_show(unsigned int var, char *page)
@@ -2710,6 +2716,14 @@ static ssize_t bfq_var_store(unsigned long *var, const char *page, size_t count)
 		*var = new_val;
 
 	return count;
+}
+
+static ssize_t bfq_raising_max_time_show(struct elevator_queue *e, char *page)
+{
+	struct bfq_data *bfqd = e->elevator_data;
+	return sprintf(page, "%d\n", bfqd->bfq_raising_max_time > 0 ?
+		       bfqd->bfq_raising_max_time :
+		       bfq_wrais_duration(bfqd));
 }
 
 static ssize_t bfq_weights_show(struct elevator_queue *e, char *page)
@@ -2762,9 +2776,11 @@ SHOW_FUNCTION(bfq_timeout_sync_show, bfqd->bfq_timeout[BLK_RW_SYNC], 1);
 SHOW_FUNCTION(bfq_timeout_async_show, bfqd->bfq_timeout[BLK_RW_ASYNC], 1);
 SHOW_FUNCTION(bfq_low_latency_show, bfqd->low_latency, 0);
 SHOW_FUNCTION(bfq_raising_coeff_show, bfqd->bfq_raising_coeff, 0);
-SHOW_FUNCTION(bfq_raising_max_time_show, bfqd->bfq_raising_max_time, 1);
 SHOW_FUNCTION(bfq_raising_rt_max_time_show, bfqd->bfq_raising_rt_max_time, 1);
 SHOW_FUNCTION(bfq_raising_min_idle_time_show, bfqd->bfq_raising_min_idle_time,
+	1);
+SHOW_FUNCTION(bfq_raising_min_inter_arr_async_show,
+	bfqd->bfq_raising_min_inter_arr_async,
 	1);
 SHOW_FUNCTION(bfq_raising_max_softrt_rate_show,
 	bfqd->bfq_raising_max_softrt_rate, 0);
@@ -2808,6 +2824,8 @@ STORE_FUNCTION(bfq_raising_rt_max_time_store, &bfqd->bfq_raising_rt_max_time, 0,
 		INT_MAX, 1);
 STORE_FUNCTION(bfq_raising_min_idle_time_store,
 	       &bfqd->bfq_raising_min_idle_time, 0, INT_MAX, 1);
+STORE_FUNCTION(bfq_raising_min_inter_arr_async_store,
+		&bfqd->bfq_raising_min_inter_arr_async, 0, INT_MAX, 1);
 STORE_FUNCTION(bfq_raising_max_softrt_rate_store,
 	       &bfqd->bfq_raising_max_softrt_rate, 0, INT_MAX, 0);
 #undef STORE_FUNCTION
@@ -2901,6 +2919,7 @@ static struct elv_fs_entry bfq_attrs[] = {
 	BFQ_ATTR(raising_max_time),
 	BFQ_ATTR(raising_rt_max_time),
 	BFQ_ATTR(raising_min_idle_time),
+	BFQ_ATTR(raising_min_inter_arr_async),
 	BFQ_ATTR(raising_max_softrt_rate),
 	BFQ_ATTR(weights),
 	__ATTR_NULL
@@ -2916,17 +2935,19 @@ static struct elevator_type iosched_bfq = {
 		.elevator_add_req_fn =		bfq_insert_request,
 		.elevator_activate_req_fn =	bfq_activate_request,
 		.elevator_deactivate_req_fn =	bfq_deactivate_request,
-		.elevator_queue_empty_fn =	bfq_queue_empty,
 		.elevator_completed_req_fn =	bfq_completed_request,
 		.elevator_former_req_fn =	elv_rb_former_request,
 		.elevator_latter_req_fn =	elv_rb_latter_request,
+		.elevator_init_icq_fn =		bfq_init_icq,
+		.elevator_exit_icq_fn =		bfq_exit_icq,
 		.elevator_set_req_fn =		bfq_set_request,
 		.elevator_put_req_fn =		bfq_put_request,
 		.elevator_may_queue_fn =	bfq_may_queue,
 		.elevator_init_fn =		bfq_init_queue,
 		.elevator_exit_fn =		bfq_exit_queue,
-		.trim =				bfq_free_io_context,
 	},
+	.icq_size =		sizeof(struct bfq_io_cq),
+	.icq_align =		__alignof__(struct bfq_io_cq),
 	.elevator_attrs =	bfq_attrs,
 	.elevator_name =	"bfq",
 	.elevator_owner =	THIS_MODULE,
@@ -2953,14 +2974,7 @@ static int __init bfq_init(void)
 
 static void __exit bfq_exit(void)
 {
-	DECLARE_COMPLETION_ONSTACK(all_gone);
 	elv_unregister(&iosched_bfq);
-	bfq_ioc_gone = &all_gone;
-	/* bfq_ioc_gone's update must be visible before reading bfq_ioc_count */
-	smp_wmb();
-	if (elv_ioc_count_read(bfq_ioc_count) != 0)
-		wait_for_completion(&all_gone);
-	ida_destroy(&cic_index_ida);
 	bfq_slab_kill();
 }
 

@@ -1,5 +1,5 @@
 /*
- * BFQ-v3r1 for 2.6.38: data structures and common functions prototypes.
+ * BFQ-v5 for 3.3.0: data structures and common functions prototypes.
  *
  * Based on ideas and code from CFQ:
  * Copyright (C) 2003 Jens Axboe <axboe@kernel.dk>
@@ -177,7 +177,6 @@ struct bfq_group;
  * @budget_timeout: budget expiration (in jiffies).
  * @dispatched: number of requests on the dispatch list or inside driver.
  * @org_ioprio: saved ioprio during boosted periods.
- * @org_ioprio_class: saved ioprio_class during boosted periods.
  * @flags: status flags.
  * @bfqq_list: node for active/idle bfqq list inside our bfqd.
  * @seek_samples: number of seeks sampled
@@ -219,7 +218,6 @@ struct bfq_queue {
 	int dispatched;
 
 	unsigned short org_ioprio;
-	unsigned short org_ioprio_class;
 
 	unsigned int flags;
 
@@ -236,6 +234,32 @@ struct bfq_queue {
 	unsigned int raising_cur_max_time;
 	u64 last_rais_start_finish, soft_rt_next_start;
 	unsigned int raising_coeff;
+};
+
+/**
+ * struct bfq_ttime - per process thinktime stats.
+ * @ttime_total: total process thinktime
+ * @ttime_samples: number of thinktime samples
+ * @ttime_mean: average process thinktime
+ */
+struct bfq_ttime {
+	unsigned long last_end_request;
+
+	unsigned long ttime_total;
+	unsigned long ttime_samples;
+	unsigned long ttime_mean;
+};
+
+/**
+ * struct bfq_io_cq - per (request_queue, io_context) structure.
+ * @icq: associated io_cq structure
+ * @bfqq: array of two process queues, the sync and the async
+ * @ttime: associated @bfq_ttime struct
+ */
+struct bfq_io_cq {
+	struct io_cq icq; /* must be the first member */
+	struct bfq_queue *bfqq[2];
+	struct bfq_ttime ttime;
 };
 
 /**
@@ -259,15 +283,13 @@ struct bfq_queue {
  *                    from the queue under service.
  * @unplug_work: delayed work to restart dispatching on the request queue.
  * @active_queue: bfq_queue under service.
- * @active_cic: cfq_io_context (cic) associated with the @active_queue.
+ * @active_bic: bfq_io_cq (bic) associated with the @active_queue.
  * @last_position: on-disk position of the last served request.
  * @last_budget_start: beginning of the last budget.
  * @last_idling_start: beginning of the last idle slice.
  * @peak_rate: peak transfer rate observed for a budget.
  * @peak_rate_samples: number of samples used to calculate @peak_rate.
  * @bfq_max_budget: maximum budget allotted to a bfq_queue before rescheduling.
- * @cic_index: use small consequent indexes as radix tree keys to reduce depth
- * @cic_list: list of all the cics active on the bfq_data device.
  * @group_list: list of all the bfq_groups active on the device.
  * @active_list: list of all the bfq_queues active on the device.
  * @idle_list: list of all the bfq_queues idle on the device.
@@ -293,8 +315,14 @@ struct bfq_queue {
  * @bfq_raising_rt_max_time: maximum duration for soft real-time processes
  * @bfq_raising_min_idle_time: minimum idle period after which weight-raising
  *			       may be reactivated for a queue (in jiffies)
+ * @bfq_raising_min_inter_arr_async: minimum period between request arrivals
+ *				     after which weight-raising may be
+ *				     reactivated for an already busy queue
+ *				     (in jiffies)
  * @bfq_raising_max_softrt_rate: max service-rate for a soft real-time queue,
  *			         sectors per seconds
+ * @RT_prod: cached value of the product R*T used for computing the maximum
+ * 	     duration of the weight raising automatically
  * @oom_bfqq: fallback dummy bfqq for extreme OOM conditions
  *
  * All the fields are protected by the @queue lock.
@@ -321,7 +349,7 @@ struct bfq_data {
 	struct work_struct unplug_work;
 
 	struct bfq_queue *active_queue;
-	struct cfq_io_context *active_cic;
+	struct bfq_io_cq *active_bic;
 
 	sector_t last_position;
 
@@ -331,8 +359,6 @@ struct bfq_data {
 	u64 peak_rate;
 	unsigned long bfq_max_budget;
 
-	unsigned int cic_index;
-	struct list_head cic_list;
 	struct hlist_head group_list;
 	struct list_head active_list;
 	struct list_head idle_list;
@@ -355,7 +381,9 @@ struct bfq_data {
 	unsigned int bfq_raising_max_time;
 	unsigned int bfq_raising_rt_max_time;
 	unsigned int bfq_raising_min_idle_time;
+	unsigned int bfq_raising_min_inter_arr_async;
 	unsigned int bfq_raising_max_softrt_rate;
+	u64 RT_prod;
 
 	struct bfq_queue oom_bfqq;
 };
@@ -501,37 +529,21 @@ bfq_entity_service_tree(struct bfq_entity *entity)
 	return sched_data->service_tree + idx;
 }
 
-static inline struct bfq_queue *cic_to_bfqq(struct cfq_io_context *cic,
+static inline struct bfq_queue *bic_to_bfqq(struct bfq_io_cq *bic,
 					    int is_sync)
 {
-	return cic->cfqq[!!is_sync];
+	return bic->bfqq[!!is_sync];
 }
 
-static inline void cic_set_bfqq(struct cfq_io_context *cic,
+static inline void bic_set_bfqq(struct bfq_io_cq *bic,
 				struct bfq_queue *bfqq, int is_sync)
 {
-	cic->cfqq[!!is_sync] = bfqq;
+	bic->bfqq[!!is_sync] = bfqq;
 }
 
-static inline void call_for_each_cic(struct io_context *ioc,
-				     void (*func)(struct io_context *,
-				     struct cfq_io_context *))
+static inline struct bfq_data *bic_to_bfqd(struct bfq_io_cq *bic)
 {
-	struct cfq_io_context *cic;
-	struct hlist_node *n;
-
-	rcu_read_lock();
-	hlist_for_each_entry_rcu(cic, n, &ioc->bfq_cic_list, cic_list)
-		func(ioc, cic);
-	rcu_read_unlock();
-}
-
-#define CIC_DEAD_KEY    1ul
-#define CIC_DEAD_INDEX_SHIFT    1
-
-static inline void *bfqd_dead_key(struct bfq_data *bfqd)
-{
-	return (void *)(bfqd->cic_index << CIC_DEAD_INDEX_SHIFT | CIC_DEAD_KEY);
+	return bic->icq.q->elevator->elevator_data;
 }
 
 /**
@@ -539,7 +551,7 @@ static inline void *bfqd_dead_key(struct bfq_data *bfqd)
  * @ptr: a pointer to a bfqd.
  * @flags: storage for the flags to be saved.
  *
- * This function allows cic->key and bfqg->bfqd to be protected by the
+ * This function allows bfqg->bfqd to be protected by the
  * queue lock of the bfqd they reference; the pointer is dereferenced
  * under RCU, so the storage for bfqd is assured to be safe as long
  * as the RCU read side critical section does not end.  After the
@@ -556,7 +568,7 @@ static inline struct bfq_data *bfq_get_bfqd_locked(void **ptr,
 	rcu_read_lock();
 	bfqd = rcu_dereference(*(struct bfq_data **)ptr);
 
-	if (bfqd != NULL && !((unsigned long) bfqd & CIC_DEAD_KEY)) {
+	if (bfqd != NULL) {
 		spin_lock_irqsave(bfqd->queue->queue_lock, *flags);
 		if (*ptr == bfqd)
 			goto out;
@@ -576,7 +588,7 @@ static inline void bfq_put_bfqd_unlock(struct bfq_data *bfqd,
 }
 
 static void bfq_changed_ioprio(struct io_context *ioc,
-			       struct cfq_io_context *cic);
+			       struct bfq_io_cq *bic);
 static void bfq_put_queue(struct bfq_queue *bfqq);
 static void bfq_dispatch_insert(struct request_queue *q, struct request *rq);
 static struct bfq_queue *bfq_get_queue(struct bfq_data *bfqd,

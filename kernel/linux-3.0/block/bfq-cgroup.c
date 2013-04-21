@@ -263,7 +263,8 @@ static void bfq_bfqq_move(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 			bfq_del_bfqq_busy(bfqd, bfqq, 0);
 		else
 			bfq_deactivate_bfqq(bfqd, bfqq, 0);
-	}
+	} else if (entity->on_st)
+		bfq_put_idle_entity(bfq_entity_service_tree(entity), entity);
 
 	/*
 	 * Here we use a reference to bfqg.  We don't need a refcounter
@@ -278,39 +279,36 @@ static void bfq_bfqq_move(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 }
 
 /**
- * __bfq_cic_change_cgroup - move @cic to @cgroup.
+ * __bfq_bic_change_cgroup - move @bic to @cgroup.
  * @bfqd: the queue descriptor.
- * @cic: the cic to move.
+ * @bic: the bic to move.
  * @cgroup: the cgroup to move to.
  *
- * Move cic to cgroup, assuming that bfqd->queue is locked; the caller
+ * Move bic to cgroup, assuming that bfqd->queue is locked; the caller
  * has to make sure that the reference to cgroup is valid across the call.
  *
  * NOTE: an alternative approach might have been to store the current
  * cgroup in bfqq and getting a reference to it, reducing the lookup
  * time here, at the price of slightly more complex code.
  */
-static struct bfq_group *__bfq_cic_change_cgroup(struct bfq_data *bfqd,
-						 struct cfq_io_context *cic,
+static struct bfq_group *__bfq_bic_change_cgroup(struct bfq_data *bfqd,
+						 struct bfq_io_cq *bic,
 						 struct cgroup *cgroup)
 {
-	struct bfq_queue *async_bfqq = cic_to_bfqq(cic, 0);
-	struct bfq_queue *sync_bfqq = cic_to_bfqq(cic, 1);
+	struct bfq_queue *async_bfqq = bic_to_bfqq(bic, 0);
+	struct bfq_queue *sync_bfqq = bic_to_bfqq(bic, 1);
 	struct bfq_entity *entity;
 	struct bfq_group *bfqg;
-	struct bfqio_cgroup *bgrp;
-
-	bgrp = cgroup_to_bfqio(cgroup);
 
 	bfqg = bfq_find_alloc_group(bfqd, cgroup);
 	if (async_bfqq != NULL) {
 		entity = &async_bfqq->entity;
 
 		if (entity->sched_data != &bfqg->sched_data) {
-			cic_set_bfqq(cic, NULL, 0);
+			bic_set_bfqq(bic, NULL, 0);
 			bfq_log_bfqq(bfqd, async_bfqq,
-				     "cic_change_group: %p %d",
-				     async_bfqq, async_bfqq->ref);
+				     "bic_change_group: %p %d",
+				     async_bfqq, atomic_read(&async_bfqq->ref));
 			bfq_put_queue(async_bfqq);
 		}
 	}
@@ -325,33 +323,33 @@ static struct bfq_group *__bfq_cic_change_cgroup(struct bfq_data *bfqd,
 }
 
 /**
- * bfq_cic_change_cgroup - move @cic to @cgroup.
- * @cic: the cic being migrated.
+ * bfq_bic_change_cgroup - move @bic to @cgroup.
+ * @bic: the bic being migrated.
  * @cgroup: the destination cgroup.
  *
- * When the task owning @cic is moved to @cgroup, @cic is immediately
+ * When the task owning @bic is moved to @cgroup, @bic is immediately
  * moved into its new parent group.
  */
-static void bfq_cic_change_cgroup(struct cfq_io_context *cic,
+static void bfq_bic_change_cgroup(struct bfq_io_cq *bic,
 				  struct cgroup *cgroup)
 {
 	struct bfq_data *bfqd;
 	unsigned long uninitialized_var(flags);
 
-	bfqd = bfq_get_bfqd_locked(&cic->key, &flags);
+	bfqd = bfq_get_bfqd_locked(&(bic->icq.q->elevator->elevator_data), &flags);
 	if (bfqd != NULL) {
-		__bfq_cic_change_cgroup(bfqd, cic, cgroup);
+		__bfq_bic_change_cgroup(bfqd, bic, cgroup);
 		bfq_put_bfqd_unlock(bfqd, &flags);
 	}
 }
 
 /**
- * bfq_cic_update_cgroup - update the cgroup of @cic.
- * @cic: the @cic to update.
+ * bfq_bic_update_cgroup - update the cgroup of @bic.
+ * @bic: the @bic to update.
  *
- * Make sure that @cic is enqueued in the cgroup of the current task.
- * We need this in addition to moving cics during the cgroup attach
- * phase because the task owning @cic could be at its first disk
+ * Make sure that @bic is enqueued in the cgroup of the current task.
+ * We need this in addition to moving bics during the cgroup attach
+ * phase because the task owning @bic could be at its first disk
  * access or we may end up in the root cgroup as the result of a
  * memory allocation failure and here we try to move to the right
  * group.
@@ -366,9 +364,9 @@ static void bfq_cic_change_cgroup(struct cfq_io_context *cic,
  *      migrated to a different cgroup] its attach() callback will have
  *      taken care of remove all the references to the old cgroup data.
  */
-static struct bfq_group *bfq_cic_update_cgroup(struct cfq_io_context *cic)
+static struct bfq_group *bfq_bic_update_cgroup(struct bfq_io_cq *bic)
 {
-	struct bfq_data *bfqd = cic->key;
+	struct bfq_data *bfqd = bic_to_bfqd(bic);
 	struct bfq_group *bfqg;
 	struct cgroup *cgroup;
 
@@ -376,7 +374,7 @@ static struct bfq_group *bfq_cic_update_cgroup(struct cfq_io_context *cic)
 
 	rcu_read_lock();
 	cgroup = task_cgroup(current, bfqio_subsys_id);
-	bfqg = __bfq_cic_change_cgroup(bfqd, cic, cgroup);
+	bfqg = __bfq_bic_change_cgroup(bfqd, bic, cgroup);
 	rcu_read_unlock();
 
 	return bfqg;
@@ -392,6 +390,48 @@ static inline void bfq_flush_idle_tree(struct bfq_service_tree *st)
 
 	for (; entity != NULL; entity = st->first_idle)
 		__bfq_deactivate_entity(entity, 0);
+}
+
+/**
+ * bfq_reparent_leaf_entity - move leaf entity to the root_group.
+ * @bfqd: the device data structure with the root group.
+ * @entity: the entity to move.
+ */
+static inline void bfq_reparent_leaf_entity(struct bfq_data *bfqd,
+					    struct bfq_entity *entity)
+{
+	struct bfq_queue *bfqq = bfq_entity_to_bfqq(entity);
+
+	BUG_ON(bfqq == NULL);
+	bfq_bfqq_move(bfqd, bfqq, entity, bfqd->root_group);
+	return;
+}
+
+/**
+ * bfq_reparent_active_entities - move to the root group all active entities.
+ * @bfqd: the device data structure with the root group.
+ * @bfqg: the group to move from.
+ * @st: the service tree with the entities.
+ *
+ * Needs queue_lock to be taken and reference to be valid over the call.
+ */
+static inline void bfq_reparent_active_entities(struct bfq_data *bfqd,
+						struct bfq_group *bfqg,
+						struct bfq_service_tree *st)
+{
+	struct rb_root *active = &st->active;
+	struct bfq_entity *entity = NULL;
+
+	if (!RB_EMPTY_ROOT(&st->active))
+		entity = bfq_entity_of(rb_first(active));
+
+	for (; entity != NULL ; entity = bfq_entity_of(rb_first(active)))
+		bfq_reparent_leaf_entity(bfqd, entity);
+
+	if (bfqg->sched_data.active_entity != NULL)
+		bfq_reparent_leaf_entity(bfqd, bfqg->sched_data.active_entity);
+
+	return;
 }
 
 /**
@@ -412,17 +452,9 @@ static void bfq_destroy_group(struct bfqio_cgroup *bgrp, struct bfq_group *bfqg)
 	hlist_del(&bfqg->group_node);
 
 	/*
-	 * We may race with device destruction, take extra care when
-	 * dereferencing bfqg->bfqd.
+	 * Empty all service_trees belonging to this group before deactivating
+	 * the group itself.
 	 */
-	bfqd = bfq_get_bfqd_locked(&bfqg->bfqd, &flags);
-	if (bfqd != NULL) {
-		hlist_del(&bfqg->bfqd_node);
-		__bfq_deactivate_entity(entity, 0);
-		bfq_put_async_queues(bfqd, bfqg);
-		bfq_put_bfqd_unlock(bfqd, &flags);
-	}
-
 	for (i = 0; i < BFQ_IOPRIO_CLASSES; i++) {
 		st = bfqg->sched_data.service_tree + i;
 
@@ -434,11 +466,40 @@ static void bfq_destroy_group(struct bfqio_cgroup *bgrp, struct bfq_group *bfqg)
 		 */
 		bfq_flush_idle_tree(st);
 
+		/*
+		 * It may happen that some queues are still active
+		 * (busy) upon group destruction (if the corresponding
+		 * processes have been forced to terminate). We move
+		 * all the leaf entities corresponding to these queues
+		 * to the root_group.
+		 * Also, it may happen that the group has an entity
+		 * under service, which is disconnected from the active
+		 * tree: it must be moved, too.
+		 * There is no need to put the sync queues, as the
+		 * scheduler has taken no reference.
+		 */
+		bfqd = bfq_get_bfqd_locked(&bfqg->bfqd, &flags);
+		if (bfqd != NULL) {
+			bfq_reparent_active_entities(bfqd, bfqg, st);
+			bfq_put_bfqd_unlock(bfqd, &flags);
+		}
 		BUG_ON(!RB_EMPTY_ROOT(&st->active));
 		BUG_ON(!RB_EMPTY_ROOT(&st->idle));
 	}
 	BUG_ON(bfqg->sched_data.next_active != NULL);
 	BUG_ON(bfqg->sched_data.active_entity != NULL);
+
+	/*
+	 * We may race with device destruction, take extra care when
+	 * dereferencing bfqg->bfqd.
+	 */
+	bfqd = bfq_get_bfqd_locked(&bfqg->bfqd, &flags);
+	if (bfqd != NULL) {
+		hlist_del(&bfqg->bfqd_node);
+		__bfq_deactivate_entity(entity, 0);
+		bfq_put_async_queues(bfqd, bfqg);
+		bfq_put_bfqd_unlock(bfqd, &flags);
+	}
 	BUG_ON(entity->tree != NULL);
 
 	/*
@@ -633,13 +694,13 @@ static struct cgroup_subsys_state *bfqio_create(struct cgroup_subsys *subsys,
 /*
  * We cannot support shared io contexts, as we have no mean to support
  * two tasks with the same ioc in two different groups without major rework
- * of the main cic/bfqq data structures.  By now we allow a task to change
+ * of the main bic/bfqq data structures.  By now we allow a task to change
  * its cgroup only if it's the only owner of its ioc; the drawback of this
  * behavior is that a group containing a task that forked using CLONE_IO
  * will not be destroyed until the tasks sharing the ioc die.
  */
 static int bfqio_can_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
-			    struct task_struct *tsk, bool threadgroup)
+			    struct task_struct *tsk)
 {
 	struct io_context *ioc;
 	int ret = 0;
@@ -661,11 +722,10 @@ static int bfqio_can_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
 }
 
 static void bfqio_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
-			 struct cgroup *prev, struct task_struct *tsk,
-			 bool threadgroup)
+			 struct cgroup *prev, struct task_struct *tsk)
 {
 	struct io_context *ioc;
-	struct cfq_io_context *cic;
+	struct io_cq *icq;
 	struct hlist_node *n;
 
 	task_lock(tsk);
@@ -680,11 +740,11 @@ static void bfqio_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
 		return;
 
 	rcu_read_lock();
-	hlist_for_each_entry_rcu(cic, n, &ioc->bfq_cic_list, cic_list)
-		bfq_cic_change_cgroup(cic, cgroup);
+	hlist_for_each_entry_rcu(icq, n, &ioc->icq_list, ioc_node)
+		bfq_bic_change_cgroup(icq_to_bic(icq), cgroup);
 	rcu_read_unlock();
 
-	put_io_context(ioc);
+	put_io_context(ioc, NULL);
 }
 
 static void bfqio_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
@@ -729,9 +789,9 @@ static inline void bfq_init_entity(struct bfq_entity *entity,
 }
 
 static inline struct bfq_group *
-bfq_cic_update_cgroup(struct cfq_io_context *cic)
+bfq_bic_update_cgroup(struct bfq_io_cq *bic)
 {
-	struct bfq_data *bfqd = cic->key;
+	struct bfq_data *bfqd = bic_to_bfqd(bic);
 	return bfqd->root_group;
 }
 
