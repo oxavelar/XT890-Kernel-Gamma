@@ -15,6 +15,10 @@
 # remote compile target.
 #
 
+################################################################################
+####################### GLOBAL SETUP AND FILE STRUCTURES #######################
+################################################################################
+
 KVERSION = linux-3.0
 ARCH = i386
 KDEFCONFIG = i386_mfld_oxavelar_defconfig
@@ -26,6 +30,11 @@ CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.7/bin/i686-linux-android-
 NUMJOBS = `grep -c cores /proc/cpuinfo)`
 
 KBUILD_VERBOSE = 0
+
+################################################################################
+###################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ##################
+################################################################################
+
 ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
                  -m32 \
                  -march=atom \
@@ -38,18 +47,33 @@ ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
                  -msahf \
                  -mmovbe \
                  -finline-functions \
-                 -fno-tree-vectorize \
                  -ffast-math \
                  -fexcess-precision=fast \
-                 -ftree-parallelize-loops=4 \
+                 -ftree-parallelize-loops=2 \
                  -fomit-frame-pointer \
                  -floop-parallelize-all \
-                 --param l1-cache-size=24 \
                  --param l1-cache-line-size=64 \
+                 --param l1-cache-size=24 \
                  --param l2-cache-size=512
 
-export ANDROID_TOOLCHAIN_FLAGS KBUILD_VERBOSE
-export ARCH CROSS_COMPILE
+# The following modules have problems with -ftree-vectorize
+# and if removed will get battery reading errors.
+export CFLAGS_platform_max17042.o       = -fno-tree-vectorize
+export CFLAGS_max17042_battery.o        = -fno-tree-vectorize
+export CFLAGS_intel_mdf_battery.o       = -fno-tree-vectorize
+export CFLAGS_platform_msic_battery.o   = -fno-tree-vectorize
+export CFLAGS_platform_mid_pwm.o        = -fno-tree-vectorize
+export CFLAGS_intel_mid_pwm.o           = -fno-tree-vectorize
+export CFLAGS_power_supply.o            = -fno-tree-vectorize
+
+
+################################################################################
+############################# KERNEL BUILD STEPS ###############################
+################################################################################
+
+# Now we go and export the things we care for the kernel build
+export ARCH CROSS_COMPILE ANDROID_TOOLCHAIN_FLAGS KBUILD_VERBOSE
+
 
 BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
