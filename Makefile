@@ -38,8 +38,8 @@ KBUILD_VERBOSE = 0
 ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
                  -m32 \
                  -march=atom \
+                 -mtune=atom \
                  -msse3 \
-                 -mfpmath=387 \
                  -pipe \
                  -mpclmul \
                  -mstackrealign \
