@@ -66,7 +66,7 @@ extern int pfn_is_nosave(unsigned long);
 static struct kobj_attribute _name##_attr = {	\
 	.attr	= {				\
 		.name = __stringify(_name),	\
-		.mode = 0644,			\
+		.mode = 0664,			\
 	},					\
 	.show	= _name##_show,			\
 	.store	= _name##_store,		\

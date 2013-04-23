@@ -3289,7 +3289,7 @@ void __init tcp_init(void)
 
 	tcp_death_row.sysctl_max_tw_buckets = cnt / 2;
 	sysctl_tcp_max_orphans = cnt / 2;
-	sysctl_max_syn_backlog = max(128, cnt / 256);
+	sysctl_max_syn_backlog = max(128, cnt / 128);
 
 	limit = nr_free_buffer_pages() / 8;
 	limit = max(limit, 128UL);

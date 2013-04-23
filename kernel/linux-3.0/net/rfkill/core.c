@@ -722,7 +722,7 @@ static struct device_attribute rfkill_dev_attrs[] = {
 	__ATTR(type, S_IRUGO, rfkill_type_show, NULL),
 	__ATTR(index, S_IRUGO, rfkill_idx_show, NULL),
 	__ATTR(persistent, S_IRUGO, rfkill_persistent_show, NULL),
-	__ATTR(state, S_IRUGO|S_IWUSR, rfkill_state_show, rfkill_state_store),
+	__ATTR(state, S_IRUGO|S_IWUSR|S_IWGRP, rfkill_state_show, rfkill_state_store),
 	__ATTR(claim, S_IRUGO|S_IWUSR, rfkill_claim_show, rfkill_claim_store),
 	__ATTR(soft, S_IRUGO|S_IWUSR, rfkill_soft_show, rfkill_soft_store),
 	__ATTR(hard, S_IRUGO, rfkill_hard_show, NULL),
