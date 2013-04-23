@@ -4,12 +4,12 @@ import init.oom.rc
 import init.diag.rc
 import init.avc.rc
 import init.wireless.rc
-import init.moto.rc
+import init.smi.rc
 import init.wifi.rc
 import init.tcmd.rc
 
 # Include usb rc file
-import init.moto.usb.rc
+import init.smi.usb.rc
 
 # No emmc file systems mounted at this point (system, data, pds, etc.)
 # runs after "on early-init" and before "on early-fs"
