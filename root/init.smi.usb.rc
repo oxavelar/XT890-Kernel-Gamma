@@ -261,7 +261,7 @@ on property:sys.usb.config=charger
     write /sys/class/android_usb/android0/enable 1
     setprop sys.usb.state ${sys.usb.config}
 
-# Audio accessory configuration
+# audio accessory configuration
 on property:sys.usb.config=audio_source
     write /sys/class/android_usb/android0/enable 0
     write /sys/class/android_usb/android0/idVendor 18d1
@@ -270,7 +270,7 @@ on property:sys.usb.config=audio_source
     write /sys/class/android_usb/android0/enable 1
     setprop sys.usb.state ${sys.usb.config}
 
-# Audio accessory configuration, with adb
+# audio accessory configuration, with adb
 on property:sys.usb.config=audio_source,adb
     write /sys/class/android_usb/android0/enable 0
     write /sys/class/android_usb/android0/idVendor 18d1
@@ -316,12 +316,20 @@ on property:service.adb.root=1
     restart adbd
     write /sys/class/android_usb/android0/enable 1
 
+
+
 # Handle kernel uevent usb actions
 # none - back to defaults
 on property:sys.mot.usb.action=none
     setprop usb.mtp.pid 0x710F
     setprop usb.mtp.cdrom 1
-    setprop sys.usb.config mass_storage
+    setprop usb.mtp.config mass_storage
+
+# switch30 - switch to mtpusbnet
+on property:sys.mot.usb.action=switch30
+    setprop usb.mtp.pid 0x710D
+    setprop usb.mtp.cdrom 0
+    setprop usb.mtp.config mtp,usbnet
     setprop sys.usb.config mtp
 
 # switch01 - switch to cdrom
@@ -329,13 +337,6 @@ on property:sys.mot.usb.action=switch01
     setprop usb.mtp.pid 0x710F
     setprop usb.mtp.cdrom 1
     setprop usb.mtp.config mass_storage
-    setprop sys.usb.config mtp
-
-# switch30 - switch to mtpusbnet
-on property:sys.mot.usb.action=switch30
-    setprop usb.mtp.pid 0x710D
-    setprop usb.mtp.cdrom 1
-    setprop usb.mtp.config mtp,usbnet
     setprop sys.usb.config mtp
 
 # switch65 - reset adbd/usb

@@ -83,7 +83,7 @@ tcmd_ctrl_adb ()
                 new_usb_config=${usb_config/,adb/}
                 echo "moto-usb-sh: disabling adb ($new_usb_config)"
                 setprop sys.usb.config $new_usb_config
-                setprop persist.factory.allow_adb 1
+                setprop persist.factory.allow_adb 0
             fi
         ;;
         "1")

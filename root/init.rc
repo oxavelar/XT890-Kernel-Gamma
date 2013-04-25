@@ -250,7 +250,7 @@ on boot
     write /proc/sys/vm/dirty_writeback_centisecs 1800
     write /proc/sys/vm/dirty_ratio 90
     write /proc/sys/vm/dirty_background_ratio 70
-    write /proc/sys/vm/vfs_cache_pressure 5
+    write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
