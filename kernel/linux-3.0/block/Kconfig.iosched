@@ -123,7 +123,7 @@ choice
 	config DEFAULT_VR
 		bool "V(R)" if IOSCHED_VR=y
 
-	config DEFAULT_VR
+	config DEFAULT_ROW
 		bool "ROW" if IOSCHED_ROW=y
 
 	config DEFAULT_FIOPS
