@@ -247,7 +247,7 @@ on boot
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 300
-    write /proc/sys/vm/dirty_writeback_centisecs 1800
+    write /proc/sys/vm/dirty_writeback_centisecs 3000
     write /proc/sys/vm/dirty_ratio 90
     write /proc/sys/vm/dirty_background_ratio 70
     write /proc/sys/vm/vfs_cache_pressure 20
@@ -511,7 +511,6 @@ service mdnsd /system/bin/mdnsd
     disabled
     oneshot
 
-# Execute files in /etc/init.d before booting
 service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
     class main
     oneshot
