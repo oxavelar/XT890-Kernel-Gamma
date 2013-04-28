@@ -35,29 +35,31 @@ KBUILD_VERBOSE = 0
 ###################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ##################
 ################################################################################
 
-ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
+ANDROID_TOOLCHAIN_FLAGS = -mno-android -O2 \
                  -m32 \
                  -march=atom \
-                 -mtune=atom \
+                 -msse \
                  -msse3 \
+                 -mssse3 \
                  -pipe \
                  -mpclmul \
                  -mstackrealign \
                  -mcx16 \
                  -msahf \
                  -mmovbe \
+                 -ftree-vectorize \
                  -finline-functions \
                  -ffast-math \
                  -fexcess-precision=fast \
-                 -ftree-parallelize-loops=2 \
                  -fomit-frame-pointer \
                  -floop-parallelize-all \
+                 -ftree-parallelize-loops=2 \
                  --param l1-cache-line-size=64 \
                  --param l1-cache-size=24 \
                  --param l2-cache-size=512
 
 # The following modules have problems with -ftree-vectorize
-# and if removed will get battery reading errors.
+# and if removed will get battery reading errors
 export CFLAGS_platform_max17042.o       = -fno-tree-vectorize
 export CFLAGS_max17042_battery.o        = -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o       = -fno-tree-vectorize
