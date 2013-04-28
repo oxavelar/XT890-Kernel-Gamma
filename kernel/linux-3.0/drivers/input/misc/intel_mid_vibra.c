@@ -41,7 +41,7 @@
 #define INTEL_PWM_ENABLE_GPIO 49
 
 #define INTEL_VIBRA_MAX_TIMEDIVISOR  0xFF
-#define INTEL_VIBRA_MAX_BASEUNIT 0x80
+#define INTEL_VIBRA_MAX_BASEUNIT 0x70
 
 
 union sst_pwmctrl_reg {
