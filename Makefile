@@ -35,7 +35,7 @@ KBUILD_VERBOSE = 0
 ###################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ##################
 ################################################################################
 
-ANDROID_TOOLCHAIN_FLAGS = -mno-android -O2 \
+ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
                  -m32 \
                  -march=atom \
                  -msse \
