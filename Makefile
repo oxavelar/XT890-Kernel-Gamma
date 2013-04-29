@@ -26,7 +26,7 @@ PLATFORM = $(PWD)
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 OUT_PATH = $(PLATFORM)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
-CROSS_COMPILE = $(PLATFORM)/i686-linux-android-4.7/bin/i686-linux-android-
+CROSS_COMPILE = $(PLATFORM)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 NUMJOBS = `grep -c cores /proc/cpuinfo)`
 
 KBUILD_VERBOSE = 0
@@ -36,14 +36,13 @@ KBUILD_VERBOSE = 0
 ################################################################################
 
 ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
-                 -m32 \
+                 -mx32 \
                  -march=atom \
                  -msse \
                  -msse3 \
                  -mssse3 \
                  -pipe \
                  -mpclmul \
-                 -mstackrealign \
                  -mcx16 \
                  -msahf \
                  -mmovbe \
