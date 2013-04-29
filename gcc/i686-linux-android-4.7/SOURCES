@@ -1,0 +1,12 @@
+toolchain/build.git              7fe9b270f1b1f0feccee11937216be5fabe94950 Fix 64-bit build of GCC 4.6/4.7 with graphite support
+toolchain/gmp.git                e6b9669dafc6a5f83c80b4b4176359b78bccdc90 Add gmp-5.0.5.tar.bz2
+toolchain/mpfr.git               bde731396c38c8d5b0bca800aace6a690d0d2978 add mpfr-2.4.2.tar.bz2
+toolchain/mpc.git                a4109ccc6e07f72f41c397a17fdfbed3e5e19c66 Add mpc-0.8.1 package to toolchain source.
+toolchain/cloog.git              9efba6d305fabb9ecd29dde95c48f27010832824 add cloog-0.16.3.tar.gz
+toolchain/ppl.git                0cdb5d04fefa404debc1bddbb94322f46eb4fd69 Add ppl-0.11.2.tar.bz2
+toolchain/expat.git              40172a0ae9d40a068f1e1a48ffcf6a1ccf765ed5 expat package for building gdb-7.3
+toolchain/binutils.git           dc51c7a5e0e2620dc85e6c9c46027dce94a85e1f Fix gold issue on fsck_msdos build when objects built by ICC
+toolchain/gcc.git                92da119a900b1f73fb7f23fbe1c044a237986741 Merge "Fix ARM GCC 4.6/4.7 fail to links code using 64-bit atomic built-in"
+toolchain/gdb.git                534e6066a5c9ecbac5df305092ab197ada6bb8d0 Re-ISA-tize Thumb dynsyms to fix solib bp SIGILL
+toolchain/clang.git              f2f5aff7d1b9c946946b084faa080dde1d74d706 Add workaround for libstdc++ for C++0x.
+toolchain/llvm.git               95b8007dded354d15113cc0038f12ec62fa2b596 Update the live-ins after lowering tMOVCCr_pseudo.
