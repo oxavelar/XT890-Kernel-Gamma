@@ -243,16 +243,15 @@ on boot
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj
     chown root system /sys/module/lowmemorykiller/parameters/minfree
     chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
-    write /sys/module/lowmemorykiller/parameters/check_filepages 1
 
-    # Tweak background writeout
+    # Tweak background writeout for better battery
     write /proc/sys/vm/dirty_expire_centisecs 500
     write /proc/sys/vm/dirty_writeback_centisecs 3000
     write /proc/sys/vm/dirty_ratio 90
     write /proc/sys/vm/dirty_background_ratio 80
-    write /proc/sys/vm/vfs_cache_pressure 20
+    write /proc/sys/vm/vfs_cache_pressure 10
 
-    # Permissions for System Server and daemons.
+    # Permissions for System Server and daemons
     chown radio system /sys/android_power/state
     chown radio system /sys/android_power/request_state
     chown radio system /sys/android_power/acquire_full_wake_lock
@@ -284,7 +283,7 @@ on boot
 
     # Default Read Ahead value for sdcards
     write /sys/block/mmcblk0/queue/read_ahead_kb 1024
-    write /sys/block/mmcblk1/queue/read_ahead_kb 3072
+    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
