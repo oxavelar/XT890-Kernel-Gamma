@@ -246,7 +246,7 @@ on boot
     write /sys/module/lowmemorykiller/parameters/check_filepages 1
 
     # Tweak background writeout
-    write /proc/sys/vm/dirty_expire_centisecs 300
+    write /proc/sys/vm/dirty_expire_centisecs 500
     write /proc/sys/vm/dirty_writeback_centisecs 3000
     write /proc/sys/vm/dirty_ratio 90
     write /proc/sys/vm/dirty_background_ratio 80
@@ -283,11 +283,14 @@ on boot
     chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/input_boost
 
     # Default Read Ahead value for sdcards
-    write /sys/block/mmcblk0/queue/read_ahead_kb 128
+    write /sys/block/mmcblk0/queue/read_ahead_kb 1024
     write /sys/block/mmcblk1/queue/read_ahead_kb 3072
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
+    # Disable iostats to reduce overhead
+    write /sys/block/mmcblk0/queue/iostats 0
+    write /sys/block/mmcblk1/queue/iostats 0
 
     # Assume SMP uses shared cpufreq policy for all CPUs
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor smartassV2
