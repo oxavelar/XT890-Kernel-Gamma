@@ -236,9 +236,6 @@ on boot
 # Memory management.  Basic kernel parameters, and allow the high
 # level system server to be able to adjust the kernel OOM driver
 # parameters to match how it is managing things.
-    write /proc/sys/vm/overcommit_memory 0
-    write /proc/sys/vm/overcommit_ratio 100
-    write /proc/sys/vm/min_free_order_shift 4
     chown root system /sys/module/lowmemorykiller/parameters/adj
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj
     chown root system /sys/module/lowmemorykiller/parameters/minfree
@@ -248,8 +245,8 @@ on boot
     write /proc/sys/vm/dirty_expire_centisecs 400
     write /proc/sys/vm/dirty_writeback_centisecs 1600
     write /proc/sys/vm/dirty_ratio 70
-    write /proc/sys/vm/dirty_background_ratio 60
-    write /proc/sys/vm/vfs_cache_pressure 5
+    write /proc/sys/vm/dirty_background_ratio 5
+    write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons
     chown radio system /sys/android_power/state
