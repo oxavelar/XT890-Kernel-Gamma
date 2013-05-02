@@ -73,7 +73,7 @@ export CFLAGS_intel_mdf_battery.o       = -fno-tree-vectorize
 export ARCH CROSS_COMPILE ANDROID_TOOLCHAIN_FLAGS KBUILD_VERBOSE
 
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
