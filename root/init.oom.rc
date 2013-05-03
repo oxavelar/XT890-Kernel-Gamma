@@ -38,7 +38,7 @@ on boot
 
 # The following impacts memory transactions too and can speed up or
 # slow down the system.
-    write /proc/sys/vm/overcommit_memory 0
+    write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     write /proc/sys/vm/oom_dump_tasks 1
