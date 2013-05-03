@@ -16,7 +16,6 @@
 #
 
 import /init.${ro.hardware}.rc
-#import /init.usb.rc
 import /init.trace.rc
 
 on early-init
@@ -43,8 +42,10 @@ loglevel 3
     export LD_LIBRARY_PATH /system/lib:/system/lib/arm
     export ANDROID_BOOTLOGO 1
     export ANDROID_ROOT /system
+    export ANDROID_CACHE /cache
     export ANDROID_ASSETS /system/app
     export ANDROID_DATA /data
+    export DOWNLOAD_CACHE /cache/download
     export ASEC_MOUNTPOINT /mnt/asec
     export LOOP_MOUNTPOINT /mnt/obb
 # move definition into init.common.rc
@@ -242,10 +243,10 @@ on boot
     chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
 
     # Tweak background writeout for better battery
-    write /proc/sys/vm/dirty_expire_centisecs 400
-    write /proc/sys/vm/dirty_writeback_centisecs 1600
-    write /proc/sys/vm/dirty_ratio 70
+    write /proc/sys/vm/dirty_expire_centisecs 250
+    write /proc/sys/vm/dirty_writeback_centisecs 1250
     write /proc/sys/vm/dirty_background_ratio 5
+    write /proc/sys/vm/dirty_ratio 60
     write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons

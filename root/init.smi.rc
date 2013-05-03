@@ -21,9 +21,7 @@ on property:ro.build.type=user
 
 service fmradio /system/bin/fmradioserver
     class main
-    user system
-    group bluetooth net_bt_admin net_raw net_admin misc
-    disabled
+    group bluetooth net_bt_admin
 
 service loadpreinstalls /system/bin/logwrapper /system/bin/loadpreinstalls.sh
     class main
