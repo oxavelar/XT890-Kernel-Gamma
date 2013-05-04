@@ -45,7 +45,6 @@ loglevel 3
     export ANDROID_CACHE /cache
     export ANDROID_ASSETS /system/app
     export ANDROID_DATA /data
-    export DOWNLOAD_CACHE /cache/download
     export ASEC_MOUNTPOINT /mnt/asec
     export LOOP_MOUNTPOINT /mnt/obb
 # move definition into init.common.rc
@@ -244,9 +243,9 @@ on boot
 
     # Tweak background writeout for better battery
     write /proc/sys/vm/dirty_expire_centisecs 250
-    write /proc/sys/vm/dirty_writeback_centisecs 1250
+    write /proc/sys/vm/dirty_writeback_centisecs 1500
     write /proc/sys/vm/dirty_background_ratio 5
-    write /proc/sys/vm/dirty_ratio 60
+    write /proc/sys/vm/dirty_ratio 50
     write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons
