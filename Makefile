@@ -60,9 +60,9 @@ ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
-export CFLAGS_platform_max17042.o       = -fno-tree-vectorize
-export CFLAGS_max17042_battery.o        = -fno-tree-vectorize
-export CFLAGS_intel_mdf_battery.o       = -fno-tree-vectorize
+export CFLAGS_platform_max17042.o       := -fno-tree-vectorize
+export CFLAGS_max17042_battery.o        := -fno-tree-vectorize
+export CFLAGS_intel_mdf_battery.o       := -fno-tree-vectorize
 
 
 ############################################################################
