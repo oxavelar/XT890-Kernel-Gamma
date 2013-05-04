@@ -1074,7 +1074,7 @@ static int hidp_setup_hid(struct hidp_session *session,
 	hid->version = req->version;
 	hid->country = req->country;
 
-	strncpy(hid->name, req->name, 128);
+	strncpy(hid->name, req->name, sizeof(req->name) - 1);
 	if (session->ctrl_sock) {
 		strncpy(hid->phys,
 			batostr(&bt_sk(session->ctrl_sock->sk)->src), 64);
