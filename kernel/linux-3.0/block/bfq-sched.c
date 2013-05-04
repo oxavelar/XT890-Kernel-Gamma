@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2008 Fabio Checconi <fabio@gandalf.sssup.it>
  *		      Paolo Valente <paolo.valente@unimore.it>
+ *
+ * Copyright (C) 2010 Paolo Valente <paolo.valente@unimore.it>
  */
 
 #ifdef CONFIG_CGROUP_BFQIO
@@ -383,10 +385,8 @@ static unsigned short bfq_weight_to_ioprio(int weight)
 static inline void bfq_get_entity(struct bfq_entity *entity)
 {
 	struct bfq_queue *bfqq = bfq_entity_to_bfqq(entity);
-	struct bfq_sched_data *sd;
 
 	if (bfqq != NULL) {
-		sd = entity->sched_data;
 		atomic_inc(&bfqq->ref);
 		bfq_log_bfqq(bfqq->bfqd, bfqq, "get_entity: %p %d",
 			     bfqq, atomic_read(&bfqq->ref));
@@ -480,14 +480,12 @@ static void bfq_forget_entity(struct bfq_service_tree *st,
 			      struct bfq_entity *entity)
 {
 	struct bfq_queue *bfqq = bfq_entity_to_bfqq(entity);
-	struct bfq_sched_data *sd;
 
 	BUG_ON(!entity->on_st);
 
 	entity->on_st = 0;
 	st->wsum -= entity->weight;
 	if (bfqq != NULL) {
-		sd = entity->sched_data;
 		bfq_log_bfqq(bfqq->bfqd, bfqq, "forget_entity: %p %d",
 			     bfqq, atomic_read(&bfqq->ref));
 		bfq_put_queue(bfqq);
@@ -976,39 +974,11 @@ static struct bfq_queue *bfq_get_next_queue(struct bfq_data *bfqd)
 	return bfqq;
 }
 
-/*
- * Forced extraction of the given queue.
- */
-static void bfq_get_next_queue_forced(struct bfq_data *bfqd,
-				      struct bfq_queue *bfqq)
-{
-	struct bfq_entity *entity;
-	struct bfq_sched_data *sd;
-
-	BUG_ON(bfqd->active_queue != NULL);
-
-	entity = &bfqq->entity;
-	/*
-	 * Bubble up extraction/update from the leaf to the root.
-	*/
-	for_each_entity(entity) {
-		sd = entity->sched_data;
-		bfq_update_budget(entity);
-		bfq_update_vtime(bfq_entity_service_tree(entity));
-		bfq_active_extract(bfq_entity_service_tree(entity), entity);
-		sd->active_entity = entity;
-		sd->next_active = NULL;
-		entity->service = 0;
-	}
-
-	return;
-}
-
 static void __bfq_bfqd_reset_active(struct bfq_data *bfqd)
 {
-	if (bfqd->active_bic != NULL) {
-		put_io_context(bfqd->active_bic->icq.ioc, NULL);
-		bfqd->active_bic = NULL;
+	if (bfqd->active_cic != NULL) {
+		put_io_context(bfqd->active_cic->ioc);
+		bfqd->active_cic = NULL;
 	}
 
 	bfqd->active_queue = NULL;
