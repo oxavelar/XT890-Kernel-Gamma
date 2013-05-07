@@ -245,7 +245,7 @@ on boot
     write /proc/sys/vm/dirty_expire_centisecs 250
     write /proc/sys/vm/dirty_writeback_centisecs 1500
     write /proc/sys/vm/dirty_background_ratio 5
-    write /proc/sys/vm/dirty_ratio 50
+    write /proc/sys/vm/dirty_ratio 90
     write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons
