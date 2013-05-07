@@ -27,7 +27,7 @@ KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 OUT_PATH = $(PLATFORM)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
 CROSS_COMPILE = $(PLATFORM)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
-NUMJOBS = `grep -c cores /proc/cpuinfo)`
+NUMJOBS = `grep -c cores /proc/cpuinfo`
 
 KBUILD_VERBOSE = 0
 
