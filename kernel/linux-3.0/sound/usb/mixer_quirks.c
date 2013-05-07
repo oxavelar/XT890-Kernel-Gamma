@@ -186,6 +186,11 @@ static int snd_audigy2nx_led_put(struct snd_kcontrol *kcontrol, struct snd_ctl_e
 	if (value > 1)
 		return -EINVAL;
 	changed = value != mixer->audigy2nx_leds[index];
+	down_read(&mixer->chip->shutdown_rwsem);
+	if (mixer->chip->shutdown) {
+		err = -ENODEV;
+		goto out;
+	}
 	if (mixer->chip->usb_id == USB_ID(0x041e, 0x3042))
 		err = snd_usb_ctl_msg(mixer->chip->dev,
 			      usb_sndctrlpipe(mixer->chip->dev, 0), 0x24,
@@ -202,6 +207,8 @@ static int snd_audigy2nx_led_put(struct snd_kcontrol *kcontrol, struct snd_ctl_e
 			      usb_sndctrlpipe(mixer->chip->dev, 0), 0x24,
 			      USB_DIR_OUT | USB_TYPE_VENDOR | USB_RECIP_OTHER,
 			      value, index + 2, NULL, 0);
+ out:
+	up_read(&mixer->chip->shutdown_rwsem);
 	if (err < 0)
 		return err;
 	mixer->audigy2nx_leds[index] = value;
@@ -371,11 +378,17 @@ static int snd_nativeinstruments_control_get(struct snd_kcontrol *kcontrol,
 	u8 bRequest = (kcontrol->private_value >> 16) & 0xff;
 	u16 wIndex = kcontrol->private_value & 0xffff;
 	u8 tmp;
+	int ret;
 
-	int ret = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0), bRequest,
+	down_read(&mixer->chip->shutdown_rwsem);
+	if (mixer->chip->shutdown)
+		ret = -ENODEV;
+	else
+		ret = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0), bRequest,
 				  USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_DIR_IN,
-				  0, cpu_to_le16(wIndex),
+				  0, wIndex,
 				  &tmp, sizeof(tmp), 1000);
+	up_read(&mixer->chip->shutdown_rwsem);
 
 	if (ret < 0) {
 		snd_printk(KERN_ERR
@@ -396,11 +409,17 @@ static int snd_nativeinstruments_control_put(struct snd_kcontrol *kcontrol,
 	u8 bRequest = (kcontrol->private_value >> 16) & 0xff;
 	u16 wIndex = kcontrol->private_value & 0xffff;
 	u16 wValue = ucontrol->value.integer.value[0];
+	int ret;
 
-	int ret = usb_control_msg(dev, usb_sndctrlpipe(dev, 0), bRequest,
+	down_read(&mixer->chip->shutdown_rwsem);
+	if (mixer->chip->shutdown)
+		ret = -ENODEV;
+	else
+		ret = usb_control_msg(dev, usb_sndctrlpipe(dev, 0), bRequest,
 				  USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_DIR_OUT,
-				  cpu_to_le16(wValue), cpu_to_le16(wIndex),
+				  wValue, wIndex,
 				  NULL, 0, 1000);
+	up_read(&mixer->chip->shutdown_rwsem);
 
 	if (ret < 0) {
 		snd_printk(KERN_ERR
