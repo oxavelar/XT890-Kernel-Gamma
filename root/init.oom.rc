@@ -20,8 +20,8 @@ on boot
     setprop ro.VISIBLE_APP_MEM 2048
     setprop ro.PERCEPTIBLE_APP_MEM 4096
     setprop ro.HEAVY_WEIGHT_APP_MEM 4096
-    setprop ro.SECONDARY_SERVER_MEM 5120
-    setprop ro.BACKUP_APP_MEM 5120
+    setprop ro.SECONDARY_SERVER_MEM 6144
+    setprop ro.BACKUP_APP_MEM 6144
     setprop ro.HOME_APP_MEM 2048
     setprop ro.HIDDEN_APP_MEM 15360
     setprop ro.EMPTY_APP_MEM 23040
@@ -31,14 +31,14 @@ on boot
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first.
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
-    write /sys/module/lowmemorykiller/parameters/minfree 1536,2048,4096,5120,15360,23040
+    write /sys/module/lowmemorykiller/parameters/minfree 1536,2048,4096,6144,15360,23040
     write /sys/module/lowmemorykiller/parameters/check_filepages 1
     write /sys/module/lowmemorykiller/parameters/debug_level 0
     write /sys/module/lowmemorykiller/parameters/cost 64
 
 # The following impacts memory transactions too and can speed up or
 # slow down the system.
-    write /proc/sys/vm/overcommit_memory 1
+    write /proc/sys/vm/overcommit_memory 0
     write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     write /proc/sys/vm/oom_dump_tasks 1
