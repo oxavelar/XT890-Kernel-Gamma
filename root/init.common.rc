@@ -40,14 +40,16 @@ on boot
     chmod 0664 /sys/class/backlight/psb-bl/max_brightness
     chmod 0664 /sys/class/backlight/psb-bl/actual_brightness
 
+    # Reduce backlight prior booting
+    write /sys/class/backlight/psb-bl/brightness 40
+
     # Increasing write latencies for better battery savings
-    write /sys/block/mmcblk0/queue/nr_requests 512
-    write /sys/block/mmcblk1/queue/nr_requests 512
+    write /sys/block/mmcblk0/queue/nr_requests 1024
+    write /sys/block/mmcblk1/queue/nr_requests 1024
 
     # Reduce dirty memory size
-    write /proc/sys/vm/dirty_background_bytes 1048576
-    write /proc/sys/vm/dirty_bytes 20971520
-    write /proc/sys/vm/highmem_is_dirtyable 1
+    #write /proc/sys/vm/dirty_background_bytes 524288
+    #write /proc/sys/vm/dirty_bytes 5242880
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576
@@ -79,7 +81,7 @@ on charger
     setprop sys.usb.config charging
 
     # Reset counter watchdog at the end of system boot
-    write /sys/devices/virtual/misc/watchdog/counter "0"
+    write /sys/devices/virtual/misc/watchdog/counter 0
 
 service pvrsrvctl /system/bin/pvrsrvctl --no-module --start
     class core
@@ -96,16 +98,16 @@ service charger_app /charger
     class charger
     user root
 
-service drm /system/bin/drmserver
-    class main
-    user drm
-    group drm system inet drmrpc sdcard_r security mot_tpapi mot_drm
+#service drm /system/bin/drmserver
+#    class main
+#    user drm
+#    group drm system inet drmrpc sdcard_r security mot_tpapi mot_drm
 
-service media /system/bin/mediaserver
-    class main
-    user media
-    group system audio camera media_rw sdcard_rw inet net_bt net_bt_admin net_bw_acct drmrpc net_raw security mot_tpapi radio mot_drm
-    ioprio rt 4
+#service media /system/bin/mediaserver
+#    class main
+#    user media
+#    group system audio camera media_rw sdcard_rw inet net_bt net_bt_admin net_bw_acct drmrpc net_raw security mot_tpapi radio mot_drm
+#    ioprio rt 4
 
 # Enable Houdini for execuable
 service enable_houdini /system/bin/enable_houdini
@@ -141,4 +143,4 @@ on property:sys.shutdown.requested=1bootloader
 
 # Clear counter watchdog when boot is completed
 on property:sys.boot_completed=1
-    write /sys/devices/virtual/misc/watchdog/counter "0"
+    write /sys/devices/virtual/misc/watchdog/counter 0

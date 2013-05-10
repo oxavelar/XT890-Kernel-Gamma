@@ -42,7 +42,6 @@ loglevel 3
     export LD_LIBRARY_PATH /system/lib:/system/lib/arm
     export ANDROID_BOOTLOGO 1
     export ANDROID_ROOT /system
-    export ANDROID_CACHE /cache
     export ANDROID_ASSETS /system/app
     export ANDROID_DATA /data
     export ASEC_MOUNTPOINT /mnt/asec
@@ -279,7 +278,7 @@ on boot
     chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/input_boost
 
     # Default Read Ahead value for sdcards
-    write /sys/block/mmcblk0/queue/read_ahead_kb 1024
+    write /sys/block/mmcblk0/queue/read_ahead_kb 512
     write /sys/block/mmcblk1/queue/read_ahead_kb 2048
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
@@ -290,6 +289,9 @@ on boot
     # Extra performance boost on the IO settings
     write /sys/block/mmcblk0/queue/iosched/low_latency 1
     write /sys/block/mmcblk1/queue/iosched/low_latency 1
+    # Saving some CPU cycles
+    write /sys/block/mmcblk0/queue/nomerges 1
+    write /sys/block/mmcblk1/queue/nomerges 1
 
     # Assume SMP uses shared cpufreq policy for all CPUs
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor smartassV2
@@ -440,16 +442,16 @@ service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-sys
     onrestart restart media
     onrestart restart netd
 
-#service drm /system/bin/drmserver
-#    class main
-#    user drm
-#    group drm system inet drmrpc sdcard_r
+service drm /system/bin/drmserver
+    class main
+    user drm
+    group drm system inet drmrpc sdcard_r
 
-#service media /system/bin/mediaserver
-#    class main
-#    user media
-#    group system audio camera inet net_bt net_bt_admin net_bw_acct drmrpc net_raw
-#    ioprio rt 4
+service media /system/bin/mediaserver
+    class main
+    user media
+    group system audio camera inet net_bt net_bt_admin net_bw_acct drmrpc net_raw
+    ioprio rt 4
 
 service bootanim /system/bin/bootanimation
     class main
@@ -464,14 +466,14 @@ service dbus /system/bin/dbus-daemon --system --nofork
     user bluetooth
     group bluetooth net_bt_admin
 
-#service bluetoothd /system/bin/bluetoothd -n
-#    class main
-#    socket bluetooth stream 660 bluetooth bluetooth
-#    socket dbus_bluetooth stream 660 bluetooth bluetooth
+service bluetoothd /system/bin/bluetoothd -n
+    class main
+    socket bluetooth stream 660 bluetooth bluetooth
+    socket dbus_bluetooth stream 660 bluetooth bluetooth
     # init.rc does not yet support applying capabilities, so run as root and
     # let bluetoothd drop uid to bluetooth with the right linux capabilities
-#    group bluetooth net_bt_admin misc
-#    disabled
+    group bluetooth net_bt_admin misc
+    disabled
 
 service installd /system/bin/installd
     class main
@@ -504,6 +506,10 @@ service dumpstate /system/bin/dumpstate -s
     socket dumpstate stream 0660 shell log
     disabled
     oneshot
+
+service sshd /system/bin/start-ssh
+    class main
+    disabled
 
 service mdnsd /system/bin/mdnsd
     class main
