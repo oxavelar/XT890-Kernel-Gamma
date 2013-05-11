@@ -10,7 +10,7 @@ on init
     chmod 0660 /dev/ttyGTM*
     setprop gsm.firmware.upload ok
 
-#  Permissions for STMD Repository
+# Permissions for STMD Repository
     chmod 0664 /sys/module/hsi_ffl_tty/parameters/hangup_reasons
     chmod 0664 /sys/module/hsi_ffl_tty/parameters/reset_modem
     chmod 0664 /sys/module/hsi_ffl_tty/parameters/cold_reset_modem
@@ -46,13 +46,13 @@ on boot
     chmod 0660 /dev/ttyMFD0
     chown bluetooth bluetooth /dev/ttyMFD0
 
-#  Permissions for NFC
+# Permissions for NFC
     setprop ro.nfc.port "I2C"
     chmod 0660 /dev/pn544
     chown nfc nfc /dev/pn544
     chmod 0755 /system/bin/pcscd
 
-#  Permissions for RapidRIL Repository
+# Permissions for RapidRIL Repository
     chmod 0770 /system/etc/rril
     chown radio radio /system/etc/rril
 
@@ -133,17 +133,6 @@ service ad_proxy /system/xbin/ad_proxy
     user root
     group system cache misc audio
     disabled
-
-# for bluetooth
-service bluetoothd /system/bin/bluetoothd -d -n
-    class main
-    socket bluetooth stream 660 bluetooth bluetooth
-    socket dbus_bluetooth stream 660 bluetooth bluetooth
-    # init.rc does not yet support applying capabilities, so run as root and
-    # let hcid drop uid to bluetooth with the right linux capabilities
-    group bluetooth net_bt_admin misc
-    disabled
-    oneshot
 
 service uim /system/bin/uim-sysfs
     class core

@@ -94,6 +94,7 @@ on post-fs
     # Gyroscope
     chown system system /sys/bus/i2c/devices/5-0068/enable
     chown system system /sys/bus/i2c/devices/5-0068/poll
+    chown system system /dev/mpu
 
     # Magnetometer
     chown compass compass /sys/class/compass/akm8963/enable_acc

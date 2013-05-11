@@ -10,7 +10,7 @@ on boot
     setprop ro.HEAVY_WEIGHT_APP_ADJ 3
     setprop ro.SECONDARY_SERVER_ADJ 4
     setprop ro.BACKUP_APP_ADJ 5
-    setprop ro.HOME_APP_ADJ 1
+    setprop ro.HOME_APP_ADJ 6
     setprop ro.HIDDEN_APP_MIN_ADJ 7
     setprop ro.EMPTY_APP_ADJ 15
 
@@ -43,4 +43,3 @@ on boot
     write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     write /proc/sys/vm/oom_dump_tasks 1
-    write /proc/sys/vm/lowmem_reserve_ratio 30
