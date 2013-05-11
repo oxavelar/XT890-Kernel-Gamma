@@ -241,10 +241,10 @@ on boot
     chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
 
     # Tweak background writeout for better battery
-    write /proc/sys/vm/dirty_expire_centisecs 250
-    write /proc/sys/vm/dirty_writeback_centisecs 1000
-    write /proc/sys/vm/dirty_background_ratio 80
-    write /proc/sys/vm/dirty_ratio 90
+    write /proc/sys/vm/dirty_expire_centisecs 400
+    write /proc/sys/vm/dirty_writeback_centisecs 1600
+    write /proc/sys/vm/dirty_ratio 40
+    write /proc/sys/vm/dirty_background_ratio 20
     write /proc/sys/vm/vfs_cache_pressure 20
 
     # Permissions for System Server and daemons
@@ -442,16 +442,16 @@ service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-sys
     onrestart restart media
     onrestart restart netd
 
-service drm /system/bin/drmserver
-    class main
-    user drm
-    group drm system inet drmrpc sdcard_r
+#service drm /system/bin/drmserver
+#    class main
+#    user drm
+#    group drm system inet drmrpc sdcard_r
 
-service media /system/bin/mediaserver
-    class main
-    user media
-    group system audio camera inet net_bt net_bt_admin net_bw_acct drmrpc net_raw
-    ioprio rt 4
+#service media /system/bin/mediaserver
+#    class main
+#    user media
+#    group system audio camera inet net_bt net_bt_admin net_bw_acct drmrpc net_raw
+#    ioprio rt 4
 
 service bootanim /system/bin/bootanimation
     class main
@@ -466,14 +466,14 @@ service dbus /system/bin/dbus-daemon --system --nofork
     user bluetooth
     group bluetooth net_bt_admin
 
-service bluetoothd /system/bin/bluetoothd -n
-    class main
-    socket bluetooth stream 660 bluetooth bluetooth
-    socket dbus_bluetooth stream 660 bluetooth bluetooth
-    # init.rc does not yet support applying capabilities, so run as root and
-    # let bluetoothd drop uid to bluetooth with the right linux capabilities
-    group bluetooth net_bt_admin misc
-    disabled
+#service bluetoothd /system/bin/bluetoothd -n
+#    class main
+#    socket bluetooth stream 660 bluetooth bluetooth
+#    socket dbus_bluetooth stream 660 bluetooth bluetooth
+#    # init.rc does not yet support applying capabilities, so run as root and
+#    # let bluetoothd drop uid to bluetooth with the right linux capabilities
+#    group bluetooth net_bt_admin misc
+#    disabled
 
 service installd /system/bin/installd
     class main
