@@ -14,49 +14,56 @@
 # flags and went a little extreme on specifying the flags since this is for a 
 # remote compile target.
 #
+#                                               Mar 2013 - Omar Avelar
+#
 
 ############################################################################
-##################### GLOBAL SETUP AND FILE STRUCTURES #####################
+########################## GLOBAL MAKE ARGUMENTS ###########################
+############################################################################
+
+export ARCH := i386
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export KBUILD_VERBOSE := 0
+
+############################################################################
+##################### LOCAL SETUP AND FILE STRUCTURES ######################
 ############################################################################
 
 KVERSION = linux-3.0
-ARCH = i386
 KDEFCONFIG = i386_mfld_oxavelar_defconfig
-PLATFORM = $(PWD)
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
-OUT_PATH = $(PLATFORM)/out
+OUT_PATH = $(PWD)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
-CROSS_COMPILE = $(PLATFORM)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
-NUMJOBS = `grep -c cores /proc/cpuinfo`
-
-KBUILD_VERBOSE = 0
+NUM_CPUS = `grep -c cores /proc/cpuinfo`
 
 ############################################################################
 #################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ################
 ############################################################################
 
-ANDROID_TOOLCHAIN_FLAGS = -mno-android -O3 \
-                 -mx32 \
-                 -march=atom \
-                 -msse \
-                 -msse3 \
-                 -mssse3 \
-                 -pipe \
-                 -mpclmul \
-                 -mcx16 \
-                 -msahf \
-                 -mmovbe \
-                 -mstackrealign \
-                 -ftree-vectorize \
-                 -finline-functions \
-                 -ffast-math \
-                 -fexcess-precision=fast \
-                 -fomit-frame-pointer \
-                 -floop-parallelize-all \
-                 -ftree-parallelize-loops=2 \
-                 --param l1-cache-line-size=64 \
-                 --param l1-cache-size=24 \
-                 --param l2-cache-size=512
+export ANDROID_TOOLCHAIN_FLAGS := \
+        -mno-android \
+        -O3 \
+        -pipe \
+        -mx32 \
+        -march=atom \
+        -msse \
+        -msse3 \
+        -mssse3 \
+        -mpclmul \
+        -mcx16 \
+        -msahf \
+        -mmovbe \
+        -mstackrealign \
+        -ftree-vectorize \
+        -finline-functions \
+        -ffast-math \
+        -fexcess-precision=fast \
+        -fomit-frame-pointer \
+        -floop-parallelize-all \
+        -ftree-parallelize-loops=2 \
+        --param l1-cache-line-size=64 \
+        --param l1-cache-size=24 \
+        --param l2-cache-size=512
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
@@ -64,14 +71,9 @@ export CFLAGS_platform_max17042.o       := -fno-tree-vectorize
 export CFLAGS_max17042_battery.o        := -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o       := -fno-tree-vectorize
 
-
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
-
-# Now we go and export the things we care for the kernel build
-export ARCH CROSS_COMPILE ANDROID_TOOLCHAIN_FLAGS KBUILD_VERBOSE
-
 
 BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
@@ -96,7 +98,7 @@ bootimage: kernel
 	# Pack the boot.img
 	$(PWD)/tools/mkbootimg --kernel $(OUT_PATH)/kernel \
 	 --ramdisk $(OUT_PATH)/ramdisk.cpio.gz                \
-	 --cmdline $(BOOT_CMDLINE) --output $(PLATFORM)/out/
+	 --cmdline $(BOOT_CMDLINE) --output $(PWD)/out/
 
 .PHONY: kernel
 kernel:
@@ -104,11 +106,11 @@ kernel:
 	# I edited MAGIC_STRING to load Motorola's precompiled modules without issue
 	##define VERMAGIC_STRING \
 	#        "3.0.34-gc6f8fd7 SMP preempt mod_unload ATOM "
-	make -j$(NUMJOBS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
-	make -j$(NUMJOBS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
+	make -j $(NUM_CPUS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
+	make -j $(NUM_CPUS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
 
 .PHONY: clean
 clean:
-	make -j$(NUMJOBS) -C $(KSRC_PATH) mrproper
-	rm -rf $(PLATFORM)/out
+	make -j $(NUM_CPUS) -C $(KSRC_PATH) mrproper
+	rm -rf $(PWD)/out
 
