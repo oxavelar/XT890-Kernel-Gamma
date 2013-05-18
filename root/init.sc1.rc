@@ -15,7 +15,7 @@ import init.smi.usb.rc
 # runs after "on early-init" and before "on early-fs"
 # runs in charge-only-mode
 on init
-    export PATH /system/sbin:/system/bin:/system/xbin:/sbin
+    export PATH /system/sbin:/system/bin:/system/xbin:/sbin:/vendor/bin
 
     write /sys/class/graphics/fbcon/cursor_blink 0
     mkdir /storage/sdcard1 0000 system system
