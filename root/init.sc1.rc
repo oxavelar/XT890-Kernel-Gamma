@@ -79,17 +79,9 @@ on post-fs
     chown media system /sys/devices/platform/gpio-keys/disabled_wakeup
 
     # Permissions for Sensors
-    # accelerometer lis3dh
+    # Accelerometer lis3dh
     chown system system /sys/bus/i2c/devices/5-0018/lis3dh/poll
     chown system system /sys/bus/i2c/devices/5-0018/lis3dh/enable
-
-    # Barometer ms5607
-    chown system system /sys/bus/i2c/devices/5-0077/enable
-    chown system system /sys/bus/i2c/devices/5-0077/poll
-
-    # Compass hmc5883
-    chown system system /sys/bus/i2c/devices/5-001e/hmc5883/enable
-    chown system system /sys/bus/i2c/devices/5-001e/hmc5883/poll
 
     # Gyroscope
     chown system system /sys/bus/i2c/devices/5-0068/enable
@@ -104,15 +96,6 @@ on post-fs
     chown compass compass /sys/class/compass/akm8963/delay_mag
     chown compass compass /sys/class/compass/akm8963/delay_ori
     chown compass compass /sys/class/compass/akm8963/accel
-
-    # Magnetometer
-    chown compass compass /sys/class/compass/akm8975/enable_acc
-    chown compass compass /sys/class/compass/akm8975/enable_mag
-    chown compass compass /sys/class/compass/akm8975/enable_ori
-    chown compass compass /sys/class/compass/akm8975/delay_acc
-    chown compass compass /sys/class/compass/akm8975/delay_mag
-    chown compass compass /sys/class/compass/akm8975/delay_ori
-    chown compass compass /sys/class/compass/akm8975/accel
 
     # CT406 Light sensor and proximity
     chown system system /sys/module/ct406/parameters/als_enable
@@ -313,12 +296,6 @@ on property:sys.boot_completed=1
     insmod /lib/modules/matrix.ko
     chmod 0640 /dev/matrix
 
-service modemlog /system/bin/modemlog
-    class core
-    user system
-    group system log
-    oneshot
-
 # For LBS
 service gkisystem /system/bin/gkisystem
     class main
@@ -335,12 +312,6 @@ service locEe /system/bin/ee_driver
     class main
     user radio
     group radio inet sdcard_rw
-
-# Magnetometer
-service akmd8975 /system/bin/akmd8975
-    class main
-    user compass
-    group compass misc input
 
 # Magnetometer
 service akmd8963 /system/bin/akmd8963
