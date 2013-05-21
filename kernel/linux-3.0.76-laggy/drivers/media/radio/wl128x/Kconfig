@@ -1,0 +1,15 @@
+#
+# TI's wl128x FM driver based on TI's ST driver.
+#
+menu "Texas Instruments WL128x FM driver (ST based)"
+config RADIO_WL128X
+	tristate "Texas Instruments WL128x FM Radio"
+	depends on VIDEO_DEV
+	select TI_ST
+	help
+	This enables the FM driver for TI BT/FM/GPS combo devices
+	  This makes use of shared transport line discipline core driver to
+	  communicate with the FM core of the combo chip. This is not V4L2 compliant
+	  and must be used with TI proprietary MCP stack for FM
+
+endmenu

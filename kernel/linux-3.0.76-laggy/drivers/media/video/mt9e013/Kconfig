@@ -1,0 +1,35 @@
+config VIDEO_MT9E013
+	tristate "Micron mt9e013 sensor support"
+	depends on I2C && VIDEO_V4L2
+	---help---
+	  This is a Video4Linux2 sensor-level driver for the Aptina
+	  MT9E013 8MP RAW sensor.
+
+	  It currently depends on internal V4L2 extensions defined in
+	  atomisp driver.
+
+choice
+	prompt "Select sensor settings"
+	depends on VIDEO_MT9E013
+
+config VIDEO_MT9E013_BLACKBAY
+	bool "MT9E013 settings for Blackbay"
+	select VIDEO_MT9E013_LOW_FOV
+	---help---
+	  Default mt9e013 sensor settings for Blackbay
+config VIDEO_MT9E013_LEXINGTON
+	bool "MT9E013 settings for Lexington"
+	---help---
+	  Default mt9e013 sensor settings for Lexington
+config VIDEO_MT9E013_ENZO
+	bool "MT9E013 settings for Enzo"
+	---help---
+	  Default mt9e013 sensor settings for Enzo
+endchoice
+
+config VIDEO_MT9E013_LOW_FOV
+	bool "Micron mt9e013 sensor low FOV modes"
+	depends on VIDEO_MT9E013
+	default n
+	---help---
+	  Enable low field-of-view (FOV) modes for Micron mt9e013 sensor.

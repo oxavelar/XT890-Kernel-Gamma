@@ -25,7 +25,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <getopt.h>
-#include <elf.h>
+#include "elf.h"
 #include <fcntl.h>
 #include <setjmp.h>
 #include <stdio.h>

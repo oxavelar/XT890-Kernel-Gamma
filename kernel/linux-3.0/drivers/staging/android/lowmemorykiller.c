@@ -223,9 +223,9 @@ static void __exit lowmem_exit(void)
 
 module_param_named(cost, lowmem_shrinker.seeks, int, S_IRUGO | S_IWUSR);
 module_param_array_named(adj, lowmem_adj, int, &lowmem_adj_size,
-			 S_IRUGO | S_IWUSR | S_IWGRP);
+			 S_IRUGO | S_IWUSR);
 module_param_array_named(minfree, lowmem_minfree, uint, &lowmem_minfree_size,
-			 S_IRUGO | S_IWUSR | S_IWGRP);
+			 S_IRUGO | S_IWUSR);
 module_param_array_named(swapfree, lowmem_swapfree, uint, &lowmem_swapfree_size,
 			 S_IRUGO | S_IWUSR);
 module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);

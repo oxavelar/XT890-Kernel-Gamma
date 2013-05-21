@@ -48,19 +48,19 @@ on boot
 
     # Reducing write latencies, and mixing it around
     write /sys/block/mmcblk0/queue/nr_requests 32
-    write /sys/block/mmcblk1/queue/nr_requests 512
+    write /sys/block/mmcblk1/queue/nr_requests 256
 
     # Memory and caching boosts
-    write /proc/sys/vm/dirty_expire_centisecs 250
-    write /proc/sys/vm/dirty_writeback_centisecs 1250
-    write /proc/sys/vm/dirty_ratio 10
-    write /proc/sys/vm/dirty_background_ratio 50
+    write /proc/sys/vm/dirty_expire_centisecs 400
+    write /proc/sys/vm/dirty_writeback_centisecs 2000
+    write /proc/sys/vm/dirty_ratio 5
+    write /proc/sys/vm/dirty_background_ratio 60
     write /proc/sys/vm/vfs_cache_pressure 20
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 8388608
 
     # Default Read Ahead value for sdcards
-    write /sys/block/mmcblk0/queue/read_ahead_kb 1024
+    write /sys/block/mmcblk0/queue/read_ahead_kb 2048
     write /sys/block/mmcblk1/queue/read_ahead_kb 3072
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
@@ -73,8 +73,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/low_latency 1
     write /sys/block/mmcblk0/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
-    write /sys/block/mmcblk0/queue/iosched/quantum 32
-    write /sys/block/mmcblk1/queue/iosched/quantum 32
+    write /sys/block/mmcblk0/queue/iosched/quantum 64
+    write /sys/block/mmcblk1/queue/iosched/quantum 64
     write /sys/block/mmcblk0/queue/nomerges 1
     write /sys/block/mmcblk1/queue/nomerges 1
 
