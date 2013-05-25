@@ -42,7 +42,7 @@ NUM_CPUS = `grep -c cores /proc/cpuinfo`
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -O3 \
+        -O2 \
         -pipe \
         -march=atom \
         -msse \
@@ -57,7 +57,14 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -finline-functions \
         -ffast-math \
         -fexcess-precision=fast \
+        -fsingle-precision-constant \
+        -funsafe-math-optimizations \
         -fomit-frame-pointer \
+        -funswitch-loops \
+        -fno-delete-null-pointer-checks \
+        -floop-interchange \
+        -floop-strip-mine \
+        -floop-block \
         -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
         --param l1-cache-line-size=64 \
