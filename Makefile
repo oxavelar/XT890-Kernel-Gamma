@@ -55,9 +55,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mstackrealign \
         -ftree-vectorize \
         -finline-functions \
-        -ffast-math \
         -fexcess-precision=fast \
-        -fsingle-precision-constant \
         -funsafe-math-optimizations \
         -fomit-frame-pointer \
         -funswitch-loops \
