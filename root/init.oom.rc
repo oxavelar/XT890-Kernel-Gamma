@@ -7,9 +7,9 @@ on boot
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
-    write /sys/module/lowmemorykiller/parameters/minfree 4096,5120,6144,12288,16384,20480
+    write /sys/module/lowmemorykiller/parameters/minfree 8192,10240,12288,14336,16384,20480
     write /sys/module/lowmemorykiller/parameters/debug_level 0
-    write /sys/module/lowmemorykiller/parameters/cost 32
+    write /sys/module/lowmemorykiller/parameters/cost 48
 
 # The following impacts memory transactions too and can speed up or
 # slow down the system
