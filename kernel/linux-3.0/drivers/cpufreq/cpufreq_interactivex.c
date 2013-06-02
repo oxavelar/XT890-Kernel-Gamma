@@ -52,19 +52,15 @@ static cpumask_t work_cpumask;
 static unsigned int suspended = 0;
 static unsigned int enabled = 0;
 
-static unsigned int suspendfreq = 600000;
-
-static unsigned int samples = 0;
-
 /*
  * The minimum ammount of time to spend at a frequency before we can ramp down,
- * default is 20ms.
+ * default is 50ms.
  */
-#define DEFAULT_MIN_SAMPLE_TIME 60000;
+#define DEFAULT_MIN_SAMPLE_TIME 50000;
 static unsigned long min_sample_time;
 
-static unsigned int freq_threshold = 2000000;
-static unsigned int resume_speed = 2000000;
+#define FREQ_THRESHOLD 2000000;
+#define RESUME_SPEED 2000000;
 
 static int cpufreq_governor_interactivex(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -107,22 +103,13 @@ static void cpufreq_interactivex_timer(unsigned long data)
 		if (nr_running() < 1)
 			return;
 
-		// imoseyon - when over 1.8Ghz jump less
-		if (policy->max > freq_threshold) {
-			if (samples > 0) {
-			  target_freq = policy->max;
-			  samples = 0;
-			} else { 
-			  samples++;
-			  target_freq = freq_threshold;
-			}  
-		} else target_freq = policy->max;
+		target_freq = policy->max;
 
 		cpumask_set_cpu(data, &work_cpumask);
 		queue_work(up_wq, &freq_scale_work);
 		return;
 	}
-	samples = 0; // reset sample counter
+
 	/*
 	 * There is a window where if the cpu utlization can go from low to high
 	 * between the timer expiring, delta_idle will be > 0 and the cpu will
@@ -195,7 +182,8 @@ static unsigned int cpufreq_interactivex_calc_freq(unsigned int cpu)
 
 	cpu_load = 100 * (delta_time - idle_time) / delta_time;
 
-	newfreq = policy->cur * cpu_load / 100;	
+	if (cpu_load > 98) newfreq = policy->max;
+	else newfreq = policy->cur * cpu_load / 100;
 
 	return newfreq;
 }
@@ -205,29 +193,25 @@ static unsigned int cpufreq_interactivex_calc_freq(unsigned int cpu)
 static void cpufreq_interactivex_freq_change_time_work(struct work_struct *work)
 {
 	unsigned int cpu;
+	unsigned int newtarget;
 	cpumask_t tmp_mask = work_cpumask;
+	newtarget = FREQ_THRESHOLD;
 
 	for_each_cpu(cpu, &tmp_mask) {
-		if (!suspended && (target_freq == policy->max || target_freq == freq_threshold)) {
+	  if (!suspended) {
+		if (target_freq == policy->max) {
 			if (nr_running() == 1) {
 				cpumask_clear_cpu(cpu, &work_cpumask);
 				return;
 			}
-			__cpufreq_driver_target(policy, target_freq, CPUFREQ_RELATION_H);
+//			__cpufreq_driver_target(policy, target_freq, CPUFREQ_RELATION_H);
+			__cpufreq_driver_target(policy, newtarget, CPUFREQ_RELATION_H);
 		} else {
-			if (!suspended) {
-		  	  target_freq = cpufreq_interactivex_calc_freq(cpu);
-			  __cpufreq_driver_target(policy, target_freq, CPUFREQ_RELATION_L);
-			} else {  // special care when suspended
-			  if (target_freq > suspendfreq) {
-			     __cpufreq_driver_target(policy, suspendfreq, CPUFREQ_RELATION_H);
-			  } else {
-		  	    target_freq = cpufreq_interactivex_calc_freq(cpu);
-			    if (target_freq < policy->cur) 
-			      __cpufreq_driver_target(policy, target_freq, CPUFREQ_RELATION_H);
-			  }
-		       }
+			target_freq = cpufreq_interactivex_calc_freq(cpu);
+			__cpufreq_driver_target(policy, target_freq,
+							CPUFREQ_RELATION_L);
 		}
+	  }
 	  freq_change_time_in_idle = get_cpu_idle_time_us(cpu, &freq_change_time);
 	  cpumask_clear_cpu(cpu, &work_cpumask);
 	}
@@ -264,7 +248,7 @@ static void interactivex_suspend(int suspend)
 {
 	unsigned int max_speed;
 
-	max_speed = resume_speed;
+	max_speed = RESUME_SPEED;
 
 	if (!enabled) return;
         if (!suspend) { // resume at max speed:
@@ -273,7 +257,7 @@ static void interactivex_suspend(int suspend)
                 pr_info("[imoseyon] interactiveX awake at %d\n", policy->cur);
         } else {
 		suspended = 1;
-                __cpufreq_driver_target(policy, suspendfreq, CPUFREQ_RELATION_H);
+                __cpufreq_driver_target(policy, policy->min, CPUFREQ_RELATION_L);
                 pr_info("[imoseyon] interactiveX suspended at %d\n", policy->cur);
         }
 }
@@ -362,8 +346,7 @@ static int __init cpufreq_interactivex_init(void)
 	}
 
 	/* Scale up is high priority */
-	//up_wq = create_rt_workqueue("kinteractivex_up");
-	up_wq = alloc_workqueue("kinteractivex_up", WQ_HIGHPRI, 1);
+	up_wq = create_workqueue("kinteractive_up");
 	down_wq = create_workqueue("knteractive_down");
 
 	INIT_WORK(&freq_scale_work, cpufreq_interactivex_freq_change_time_work);
@@ -372,8 +355,8 @@ static int __init cpufreq_interactivex_init(void)
 	return cpufreq_register_governor(&cpufreq_gov_interactivex);
 }
 
-#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_interactivex
-pure_initcall(cpufreq_interactivex_init);
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
+fs_initcall(cpufreq_interactivex_init);
 #else
 module_init(cpufreq_interactivex_init);
 #endif
@@ -389,6 +372,6 @@ static void __exit cpufreq_interactivex_exit(void)
 module_exit(cpufreq_interactivex_exit);
 
 MODULE_AUTHOR("Mike Chan <mike@android.com>");
-MODULE_DESCRIPTION("'cpufreq_interactivex' - A cpufreq governor for "
+MODULE_DESCRIPTION("'cpufreq_interactiveX' - A cpufreq governor for "
 	"Latency sensitive workloads");
 MODULE_LICENSE("GPL");
