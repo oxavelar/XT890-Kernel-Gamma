@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -87,8 +87,8 @@ androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 bootimage: kernel
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
-	find $(KBUILD_OUT_PATH) -iname "*.ko" -exec cp \
-	 \{\} /tmp/smi-ramdisk/lib/modules/ \;
+	# Copy drivers to the ramdisk path
+	find $(KBUILD_OUT_PATH) -iname *.ko -exec cp \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	# Workarounds, avoiding recompile of certain module for now...
 	cp -f $(PWD)/root/lib/modules/compat.ko      /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/cfg80211.ko    /tmp/smi-ramdisk/lib/modules/
