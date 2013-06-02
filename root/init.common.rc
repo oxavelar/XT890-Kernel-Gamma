@@ -54,7 +54,7 @@ on boot
     write /proc/sys/vm/dirty_expire_centisecs 250
     write /proc/sys/vm/dirty_writeback_centisecs 1250
     write /proc/sys/vm/dirty_ratio 5
-    write /proc/sys/vm/dirty_background_ratio 60
+    write /proc/sys/vm/dirty_background_ratio 40
     write /proc/sys/vm/vfs_cache_pressure 20
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 8388608

@@ -42,7 +42,7 @@ NUM_CPUS = `grep -c cores /proc/cpuinfo`
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -O2 \
+        -O3 \
         -pipe \
         -march=atom \
         -msse \
@@ -55,8 +55,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mstackrealign \
         -ftree-vectorize \
         -finline-functions \
+        -ffast-math \
         -fexcess-precision=fast \
-        -funsafe-math-optimizations \
         -fomit-frame-pointer \
         -funswitch-loops \
         -fno-delete-null-pointer-checks \
@@ -79,7 +79,7 @@ export CFLAGS_intel_mdf_battery.o       := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
