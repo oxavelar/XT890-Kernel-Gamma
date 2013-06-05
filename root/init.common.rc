@@ -60,8 +60,8 @@ on boot
     write /proc/sys/vm/dirty_background_bytes 8388608
 
     # Default Read Ahead value for sdcards
-    write /sys/block/mmcblk0/queue/read_ahead_kb 2048
-    write /sys/block/mmcblk1/queue/read_ahead_kb 3072
+    write /sys/block/mmcblk0/queue/read_ahead_kb 512
+    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
@@ -73,8 +73,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/low_latency 1
     write /sys/block/mmcblk0/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
-    write /sys/block/mmcblk0/queue/iosched/quantum 64
-    write /sys/block/mmcblk1/queue/iosched/quantum 64
+    write /sys/block/mmcblk0/queue/iosched/quantum 16
+    write /sys/block/mmcblk1/queue/iosched/quantum 16
     write /sys/block/mmcblk0/queue/nomerges 1
     write /sys/block/mmcblk1/queue/nomerges 1
 
