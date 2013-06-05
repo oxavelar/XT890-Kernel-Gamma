@@ -53,18 +53,16 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -msahf \
         -mmovbe \
         -mstackrealign \
-        -ftree-vectorize \
-        -finline-functions \
         -ffast-math \
-        -fexcess-precision=fast \
         -fomit-frame-pointer \
-        -funswitch-loops \
-        -fno-delete-null-pointer-checks \
         -floop-interchange \
         -floop-strip-mine \
         -floop-block \
         -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
+        -ftree-loop-if-convert \
+        -funroll-loops \
+        -fvariable-expansion-in-unroller \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
         --param l2-cache-size=512
