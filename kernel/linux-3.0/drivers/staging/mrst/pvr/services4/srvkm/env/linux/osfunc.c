@@ -4215,7 +4215,7 @@ err_blocked:
 	return IMG_FALSE;
 }
 
-#if defined(__i386__)
+#if defined(__i386__) || defined(__x86_64__)
 
 #define ROUND_UP(x,a) (((x) + (a) - 1) & ~((a) - 1))
 
@@ -4470,6 +4470,7 @@ IMG_BOOL OSInvalidateCPUCacheRangeKM(IMG_HANDLE hOSMemHandle,
 #endif /* defined(__arm__) */
 
 #endif /* defined(__i386__) */
+
 
 typedef struct _AtomicStruct
 {

@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
