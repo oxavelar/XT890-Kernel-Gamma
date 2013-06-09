@@ -46,21 +46,21 @@ on boot
     # Changing the boot governor, SMP uses shared policies
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactiveX
 
-    # Reducing write latencies, and mixing it around
+    # Reducing write latencies, we got SSD-like
     write /sys/block/mmcblk0/queue/nr_requests 32
-    write /sys/block/mmcblk1/queue/nr_requests 256
+    write /sys/block/mmcblk1/queue/nr_requests 32
 
     # Memory and caching boosts
-    write /proc/sys/vm/dirty_expire_centisecs 250
-    write /proc/sys/vm/dirty_writeback_centisecs 1250
+    write /proc/sys/vm/dirty_expire_centisecs 800
+    write /proc/sys/vm/dirty_writeback_centisecs 1600
     write /proc/sys/vm/dirty_ratio 5
-    write /proc/sys/vm/dirty_background_ratio 40
-    write /proc/sys/vm/vfs_cache_pressure 20
-    write /proc/sys/vm/dirty_bytes 0
-    write /proc/sys/vm/dirty_background_bytes 8388608
+    write /proc/sys/vm/dirty_background_ratio 15
+    write /proc/sys/vm/vfs_cache_pressure 40
+    write /proc/sys/vm/dirty_bytes 12000000
+    write /proc/sys/vm/dirty_background_bytes 4000000
 
     # Default Read Ahead value for sdcards
-    write /sys/block/mmcblk0/queue/read_ahead_kb 128
+    write /sys/block/mmcblk0/queue/read_ahead_kb 256
     write /sys/block/mmcblk1/queue/read_ahead_kb 2048
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
@@ -73,10 +73,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/low_latency 1
     write /sys/block/mmcblk0/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
-    write /sys/block/mmcblk0/queue/iosched/quantum 16
-    write /sys/block/mmcblk1/queue/iosched/quantum 16
-    write /sys/block/mmcblk0/queue/nomerges 1
-    write /sys/block/mmcblk1/queue/nomerges 1
+    write /sys/block/mmcblk0/queue/iosched/quantum 12
+    write /sys/block/mmcblk1/queue/iosched/quantum 12
 
     # The scheduler tries to schedule processes on the least number H-Threads
     write /sys/devices/system/cpu/sched_smt_power_savings 1

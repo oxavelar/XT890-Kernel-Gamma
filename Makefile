@@ -52,7 +52,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mcx16 \
         -msahf \
         -mmovbe \
-        -mstackrealign \
         -ffast-math \
         -fomit-frame-pointer \
         -floop-interchange \
