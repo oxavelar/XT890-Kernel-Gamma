@@ -42,6 +42,7 @@
 /dev/snd/*                0660   system     audio
 /dev/mt9t013              0660   system     system
 /dev/audience_es305       0660   system     audio
+/dev/intel_sst_ctrl       0600   media      media
 /dev/snd/dsp              0660   system     audio
 /dev/snd/dsp1             0660   system     audio
 /dev/snd/mixer            0660   system     audio
@@ -57,6 +58,8 @@
 # FM device
 /dev/tifm                 0660   bluetooth  bluetooth
 
+/dev/watchdog             0660   system     system
+
 # Modem tty node change to radio user can read and write
 /dev/gsmtty*              0660   radio      system
 /dev/ttyMFD*              0660   radio      system
@@ -64,11 +67,21 @@
 /dev/ttyACM*              0660   root       radio
 /dev/ttyPTI1              0660   root       radio
 
+# Intel Security Driver
+/dev/sep_sec_driver       0660   mot_tpapi  mot_tpapi
+
+# SGX graphics device
+/dev/dri/card*            0666   root       root
+
 # Motorola Sensor Inteface
 /dev/lis3dh               0660   compass    compass
 /dev/akm8963              0660   compass    compass
 /dev/akm8963_dev          0660   compass    compass
 /dev/ct406                0660   compass    compass
+
+# Multimedia
+/dev/v4l-subdev*          0660   root       camera
+/dev/media*               0660   root       camera
 
 # CDMA radio interface MUX
 /dev/ppp                  0660   radio      vpn
@@ -77,15 +90,6 @@
 /sys/devices/virtual/input/input*       enable      0660  root   input
 /sys/devices/virtual/input/input*       poll_delay  0660  root   input
 /sys/devices/virtual/usb_composite/*    enable      0664  root   system
-
-/sys/devices/system/cpu/cpufreq ondemand/boostfreq              0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/boostpulse             0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/boosttime              0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/sampling_rate          0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/io_is_busy             0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/down_differential      0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/powersave_bias         0664    system  system
-/sys/devices/system/cpu/cpufreq ondemand/sampling_down_factor   0664    system  system
 
 /sys/devices/system/cpu/cpufreq interactive/boostpulse          0664    system  system
 /sys/devices/system/cpu/cpufreq interactive/timer_rate          0664    system  system
