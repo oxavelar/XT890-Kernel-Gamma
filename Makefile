@@ -59,7 +59,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -floop-block \
         -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
-        -ftree-loop-if-convert \
+        -ftree-loop-if-convert-stores \
         -funroll-loops \
         -fvariable-expansion-in-unroller \
         --param l1-cache-line-size=64 \
@@ -68,15 +68,18 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
-export CFLAGS_platform_max17042.o       := -fno-tree-vectorize
-export CFLAGS_max17042_battery.o        := -fno-tree-vectorize
-export CFLAGS_intel_mdf_battery.o       := -fno-tree-vectorize
+export CFLAGS_platform_max17042.o    := -fno-tree-vectorize
+export CFLAGS_max17042_battery.o     := -fno-tree-vectorize
+export CFLAGS_intel_mdf_battery.o    := -fno-tree-vectorize
+
+# Keep the GPS driver safe, not risking it here
+export CFLAGS_gps_drv.o              := -O2 -fno-tree-vectorize -fno-fast-math
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 

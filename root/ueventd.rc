@@ -57,13 +57,15 @@
 /dev/tun                  0660   system     vpn
 # FM device
 /dev/tifm                 0660   bluetooth  bluetooth
+/dev/tigps                0660   root       radio
 
 /dev/watchdog             0660   system     system
 
 # Modem tty node change to radio user can read and write
+/dev/ttyIFX0              0660   root       radio
 /dev/gsmtty*              0660   radio      system
 /dev/ttyMFD*              0660   radio      system
-/dev/ttyGS0               0660   root       radio
+/dev/ttyGS*               0660   root       radio
 /dev/ttyACM*              0660   root       radio
 /dev/ttyPTI1              0660   root       radio
 
@@ -87,9 +89,13 @@
 /dev/ppp                  0660   radio      vpn
 
 # SysFS properties
-/sys/devices/virtual/input/input*       enable      0660  root   input
-/sys/devices/virtual/input/input*       poll_delay  0660  root   input
-/sys/devices/virtual/usb_composite/*    enable      0664  root   system
+/sys/devices/virtual/input/input*       enable           0660  root   input
+/sys/devices/virtual/input/input*       poll_delay       0660  root   input
+/sys/devices/virtual/usb_composite/*    enable           0664  root   system
+
+/sys/devices/system/cpu/cpu1/cpufreq    scaling_governor 0644 system system
+/sys/devices/system/cpu/cpu1/cpufreq    scaling_max_freq 0664 system system
+/sys/devices/system/cpu/cpu1/cpufreq    scaling_min_freq 0644 system system
 
 /sys/devices/system/cpu/cpufreq interactive/boostpulse          0664    system  system
 /sys/devices/system/cpu/cpufreq interactive/timer_rate          0664    system  system
