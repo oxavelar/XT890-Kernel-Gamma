@@ -34,7 +34,6 @@ KDEFCONFIG = i386_mfld_oxavelar_defconfig
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 OUT_PATH = $(PWD)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
-NUM_CPUS = `grep -c cores /proc/cpuinfo`
 
 ############################################################################
 #################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ################
@@ -87,11 +86,11 @@ earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
-bootimage: kernel
+bootimage: kernel modules
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
-	# Copy drivers to the ramdisk path
-	find $(KBUILD_OUT_PATH) -iname *.ko -exec cp \{\} /tmp/smi-ramdisk/lib/modules/ \;
+	# Copy the existing modules to the ramdisk path
+	find $(KBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	# Workarounds, avoiding recompile of certain module for now...
 	cp -f $(PWD)/root/lib/modules/compat.ko      /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/cfg80211.ko    /tmp/smi-ramdisk/lib/modules/
@@ -113,11 +112,17 @@ kernel:
 	# I edited MAGIC_STRING to load Motorola's precompiled modules without issue
 	##define VERMAGIC_STRING \
 	#        "3.0.34-gc6f8fd7 SMP preempt mod_unload ATOM "
-	make -j $(NUM_CPUS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
-	make -j $(NUM_CPUS) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
+	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
+	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
+
+.PHONY: modules
+modules: kernel
+	mkdir -p $(KBUILD_OUT_PATH)
+	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
+	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) modules
 
 .PHONY: clean
 clean:
-	make -j $(NUM_CPUS) -C $(KSRC_PATH) mrproper
+	$(MAKE) -C $(KSRC_PATH) mrproper
 	rm -rf $(PWD)/out
 

@@ -292,8 +292,8 @@ service atvc /system/bin/dbvc_atvc_property_set
 
 on property:sys.boot_completed=1
     # Insert matrix for PnP measurements
-    insmod /lib/modules/matrix.ko
-    chmod 0640 /dev/matrix
+    #insmod /lib/modules/matrix.ko
+    #chmod 0640 /dev/matrix
 
 # For LBS
 service gkisystem /system/bin/gkisystem
