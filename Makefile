@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -43,6 +43,7 @@ NUM_CPUS = `grep -c cores /proc/cpuinfo`
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O3 \
+        -mx32 \
         -pipe \
         -march=atom \
         -msse \
@@ -54,12 +55,14 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mmovbe \
         -ffast-math \
         -fomit-frame-pointer \
+        -floop-block \
         -floop-interchange \
         -floop-strip-mine \
-        -floop-block \
         -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
+        -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
+        -fpeel-loops \
         -funroll-loops \
         -fvariable-expansion-in-unroller \
         --param l1-cache-line-size=64 \
@@ -73,7 +76,7 @@ export CFLAGS_max17042_battery.o     := -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o    := -fno-tree-vectorize
 
 # Keep the GPS driver safe, not risking it here
-export CFLAGS_gps_drv.o              := -O2 -fno-tree-vectorize -fno-fast-math
+export CFLAGS_gps_drv.o              := -O2 -fno-fast-math -fno-unroll-loops
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
