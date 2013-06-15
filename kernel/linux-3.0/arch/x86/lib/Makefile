@@ -21,6 +21,7 @@ lib-y += thunk_$(BITS).o
 lib-y += usercopy_$(BITS).o getuser.o putuser.o
 lib-y += memcpy_$(BITS).o
 lib-$(CONFIG_INSTRUCTION_DECODER) += insn.o inat.o
+obj-$(CONFIG_X86_ENABLE_SSSE3) += ssse3_memcpy_32.o ssse3_memcpy_wrapper_32.o
 
 obj-y += msr.o msr-reg.o msr-reg-export.o
 
