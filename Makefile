@@ -79,6 +79,8 @@ export CFLAGS_videobuf2-core.o         := -O3 -fno-fast-math -fno-unroll-loops
 export CFLAGS_videobuf2-memops.o       := -O3 -fno-fast-math -fno-unroll-loops
 export CFLAGS_atomisp.o                := -O3 -fno-fast-math -fno-unroll-loops
 export CFLAGS_mt9e013.o                := -O3 -fno-fast-math -fno-unroll-loops
+export CFLAGS_ov7736.ko                := -O3 -fno-fast-math -fno-unroll-loops
+export CFLAGS_ir-kbd-i2c.ko            := -O2 -fno-fast-math -fno-unroll-loops
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
