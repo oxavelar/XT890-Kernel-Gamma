@@ -134,15 +134,6 @@ on post-fs
     chown system system /sys/devices/platform/intel_msic/msic_ocd/msic_current/batt_level
     chown system system /sys/devices/ipc/msic_ocd/msic_current/batt_level
 
-    # Permissions for Powertool app
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
-    chown system system /sys/devices/system/cpu/cpu1/online
-    chown system system /sys/module/intel_soc_pmu/parameters/s0ix
-
     # Permissions for Touch Screen
     chown root mot_tcmd /sys/bus/i2c/drivers/atmxt-i2c/0-004a/drv_irq
     chmod 0660 /sys/bus/i2c/drivers/atmxt-i2c/0-004a/drv_irq
@@ -256,10 +247,7 @@ on boot
     chmod 0777 /system/etc/vpimg.bin
 
     #  Permissions for Thermal Management
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     chown system system /sys/devices/ipc/msic_battery/charge_enable
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_max_freq
     chown system system /sys/module/intel_mid_osip/parameters/force_shutdown_occured
 
     chmod 0664 /sys/devices/ipc/msic_battery/charge_enable
@@ -269,7 +257,6 @@ on boot
     chmod 220 /sys/devices/ipc/msic_adc/mid_gpadc/alloc_channel
     chmod 220 /sys/devices/ipc/msic_adc/mid_gpadc/free_channel
     chmod 664 /sys/devices/ipc/msic_adc/mid_gpadc/sample
-
 
     chmod 0660 /sys/devices/pci0000:00/0000:00:02.0/acl_mode
     chown system system /sys/devices/pci0000:00/0000:00:02.0/acl_mode

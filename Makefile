@@ -42,7 +42,6 @@ KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O3 \
-        -mx32 \
         -pipe \
         -march=atom \
         -msse \
@@ -74,8 +73,10 @@ export CFLAGS_platform_max17042.o    := -fno-tree-vectorize
 export CFLAGS_max17042_battery.o     := -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o    := -fno-tree-vectorize
 
-# Keep the GPS driver safe, not risking it here
+# Keeping some external modules safe, not risking it here
 export CFLAGS_gps_drv.o              := -O2 -fno-fast-math -fno-unroll-loops
+export CFLAGS_videobuf2-core.o       := -O2 -fno-fast-math -fno-unroll-loops
+export CFLAGS_videobuf2-memops.o     := -O2 -fno-fast-math -fno-unroll-loops
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
@@ -115,7 +116,6 @@ kernel:
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
 
-.PHONY: modules
 modules: kernel
 	mkdir -p $(KBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
