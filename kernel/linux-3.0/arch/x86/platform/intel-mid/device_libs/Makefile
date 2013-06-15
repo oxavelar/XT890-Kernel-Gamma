@@ -1,5 +1,4 @@
-
-CFLAGS_platform_clv_regulator.o			:= -Werror
+#CFLAGS_platform_clv_regulator.o			:= -Werror
 
 # IPC Devices
 obj-y									+= platform_mrfld_audio.o

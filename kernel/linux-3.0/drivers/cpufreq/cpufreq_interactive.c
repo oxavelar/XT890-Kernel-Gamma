@@ -53,7 +53,6 @@ struct cpufreq_interactive_cpuinfo {
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
 	int governor_enabled;
-	int cpu_load;
 };
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
@@ -131,29 +130,30 @@ struct cpufreq_governor cpufreq_gov_interactive = {
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
-							cputime64_t *wall)
+						  cputime64_t *wall)
 {
-	cputime64_t idle_time;
-	cputime64_t cur_wall_time;
-	cputime64_t busy_time;
+	u64 idle_time;
+	u64 cur_wall_time;
+	u64 busy_time;
 
 	cur_wall_time = jiffies64_to_cputime64(get_jiffies_64());
-	busy_time = cputime64_add(kstat_cpu(cpu).cpustat.user,
-			kstat_cpu(cpu).cpustat.system);
 
-	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.irq);
-	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.softirq);
-	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.steal);
-	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.nice);
+	busy_time  = kstat_cpu(cpu).cpustat.user;
+	busy_time += kstat_cpu(cpu).cpustat.system;
+	busy_time += kstat_cpu(cpu).cpustat.irq;
+	busy_time += kstat_cpu(cpu).cpustat.softirq;
+	busy_time += kstat_cpu(cpu).cpustat.steal;
+	busy_time += kstat_cpu(cpu).cpustat.nice;
 
-	idle_time = cputime64_sub(cur_wall_time, busy_time);
+	idle_time = cur_wall_time - busy_time;
 	if (wall)
-		*wall = (cputime64_t)jiffies_to_usecs(cur_wall_time);
+		*wall = jiffies_to_usecs(cur_wall_time);
 
-	return (cputime64_t)jiffies_to_usecs(idle_time);
+	return jiffies_to_usecs(idle_time);
 }
 
-static inline cputime64_t get_cpu_idle_time(unsigned int cpu, cputime64_t *wall)
+static inline cputime64_t get_cpu_idle_time(unsigned int cpu,
+					    cputime64_t *wall)
 {
 	u64 idle_time = get_cpu_idle_time_us(cpu, wall);
 
@@ -360,8 +360,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 	cpu_load = loadadjfreq / pcpu->target_freq;
 	boosted = boost_val || now < boostpulse_endtime;
 
-	pcpu->cpu_load = cpu_load;
-
 	if (cpu_load >= go_hispeed_load || boosted) {
 		if (pcpu->target_freq < hispeed_freq) {
 			new_freq = hispeed_freq;
@@ -557,8 +555,6 @@ static int cpufreq_interactive_speedchange_task(void *data)
 
 				if (pjcpu->target_freq > max_freq)
 					max_freq = pjcpu->target_freq;
-
-				cpufreq_notify_utilization(pcpu->policy, (pcpu->cpu_load * pcpu->policy->cur) / pcpu->policy->cpuinfo.max_freq);
 			}
 
 			if (max_freq != pcpu->policy->cur)
@@ -797,7 +793,7 @@ static ssize_t store_hispeed_freq(struct kobject *kobj,
 	return count;
 }
 
-static struct global_attr hispeed_freq_attr = __ATTR(hispeed_freq, 0666,
+static struct global_attr hispeed_freq_attr = __ATTR(hispeed_freq, 0644,
 		show_hispeed_freq, store_hispeed_freq);
 
 
@@ -820,7 +816,7 @@ static ssize_t store_go_hispeed_load(struct kobject *kobj,
 	return count;
 }
 
-static struct global_attr go_hispeed_load_attr = __ATTR(go_hispeed_load, 0666,
+static struct global_attr go_hispeed_load_attr = __ATTR(go_hispeed_load, 0644,
 		show_go_hispeed_load, store_go_hispeed_load);
 
 static ssize_t show_min_sample_time(struct kobject *kobj,
@@ -842,7 +838,7 @@ static ssize_t store_min_sample_time(struct kobject *kobj,
 	return count;
 }
 
-static struct global_attr min_sample_time_attr = __ATTR(min_sample_time, 0666,
+static struct global_attr min_sample_time_attr = __ATTR(min_sample_time, 0644,
 		show_min_sample_time, store_min_sample_time);
 
 static ssize_t show_timer_rate(struct kobject *kobj,
@@ -864,7 +860,7 @@ static ssize_t store_timer_rate(struct kobject *kobj,
 	return count;
 }
 
-static struct global_attr timer_rate_attr = __ATTR(timer_rate, 0666,
+static struct global_attr timer_rate_attr = __ATTR(timer_rate, 0644,
 		show_timer_rate, store_timer_rate);
 
 static ssize_t show_timer_slack(
@@ -937,7 +933,7 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 }
 
 static struct global_attr boostpulse =
-	__ATTR(boostpulse, 0666, NULL, store_boostpulse);
+	__ATTR(boostpulse, 0200, NULL, store_boostpulse);
 
 static ssize_t show_boostpulse_duration(
 	struct kobject *kobj, struct attribute *attr, char *buf)
@@ -981,7 +977,7 @@ static ssize_t store_io_is_busy(struct kobject *kobj,
 	return count;
 }
 
-static struct global_attr io_is_busy_attr = __ATTR(io_is_busy, 0666,
+static struct global_attr io_is_busy_attr = __ATTR(io_is_busy, 0644,
 		show_io_is_busy, store_io_is_busy);
 
 static struct attribute *interactive_attributes[] = {
@@ -1082,7 +1078,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 				&interactive_attr_group);
 		if (rc) {
 			mutex_unlock(&gov_lock);
-			return rc;
 		}
 
 		idle_notifier_register(&cpufreq_interactive_idle_nb);
@@ -1110,8 +1105,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		cpufreq_unregister_notifier(
 			&cpufreq_notifier_block, CPUFREQ_TRANSITION_NOTIFIER);
 		idle_notifier_unregister(&cpufreq_interactive_idle_nb);
-		sysfs_remove_group(cpufreq_global_kobject,
-				&interactive_attr_group);
 		mutex_unlock(&gov_lock);
 
 		break;

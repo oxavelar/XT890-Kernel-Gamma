@@ -87,7 +87,7 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (80 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (60 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
@@ -126,7 +126,7 @@ static bool io_is_busy;
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
 
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
 static
 #endif
 struct cpufreq_governor cpufreq_gov_interactivex = {

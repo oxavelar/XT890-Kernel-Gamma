@@ -47,8 +47,8 @@ DEFINES += -DUSE_SSSE3
 DEFINES += -DPUNIT_CAMERA_BUSY
 DEFINES += -DUSE_KMEM_CACHE
 
-ifndef CONFIG_MUDFLAP
-EXTRA_CFLAGS := $(INCLUDES) $(DEFINES) -fno-common -Werror
-else
+#ifndef CONFIG_MUDFLAP
+#EXTRA_CFLAGS := $(INCLUDES) $(DEFINES) -fno-common -Werror
+#else
 EXTRA_CFLAGS := $(INCLUDES) $(DEFINES) -fno-common
-endif
+#endif

@@ -44,6 +44,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -O3 \
         -pipe \
         -march=atom \
+        -mfpmath=sse \
         -msse \
         -msse3 \
         -mssse3 \
@@ -69,18 +70,19 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
-export CFLAGS_platform_max17042.o      := -fno-tree-vectorize
-export CFLAGS_max17042_battery.o       := -fno-tree-vectorize
-export CFLAGS_intel_mdf_battery.o      := -fno-tree-vectorize
+export CFLAGS_platform_max17042.o           := -fno-tree-vectorize
+export CFLAGS_max17042_battery.o            := -fno-tree-vectorize
+export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 
 # Keeping some external modules safe, not risking it here
-export CFLAGS_gps_drv.o                := -O2 -fno-fast-math -fno-unroll-loops
-export CFLAGS_videobuf2-core.o         := -O3 -fno-fast-math -fno-unroll-loops
-export CFLAGS_videobuf2-memops.o       := -O3 -fno-fast-math -fno-unroll-loops
-export CFLAGS_atomisp.o                := -O3 -fno-fast-math -fno-unroll-loops
-export CFLAGS_mt9e013.o                := -O3 -fno-fast-math -fno-unroll-loops
-export CFLAGS_ov7736.ko                := -O3 -fno-fast-math -fno-unroll-loops
-export CFLAGS_ir-kbd-i2c.ko            := -O2 -fno-fast-math -fno-unroll-loops
+export CFLAGS_gps_drv.o                     := -O2 -fno-fast-math
+export CFLAGS_videobuf2-core.o              := -O2 -fno-fast-math
+export CFLAGS_videobuf2-memops.o            := -O2 -fno-fast-math
+export CFLAGS_atomisp.o                     := -O2 -fno-fast-math
+export CFLAGS_mt9e013.o                     := -O2 -fno-fast-math
+export CFLAGS_ov7736.o                      := -O2 -fno-fast-math
+export CFLAGS_ir-kbd-i2c.o                  := -O2 -fno-fast-math
+export CFLAGS_intel_mid_ssp_test_driver.o   := -O2 -fno-fast-math
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
@@ -96,12 +98,13 @@ bootimage: kernel modules
 	cp -R $(PWD)/root /tmp/smi-ramdisk
 	# Copy the existing modules to the ramdisk path
 	find $(KBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
-	# Workarounds, avoiding recompile of certain module for now...
+	# Workarounds, avoiding recompile of certain modules for now...
 	cp -f $(PWD)/root/lib/modules/compat.ko      /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/cfg80211.ko    /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/mac80211.ko    /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/wl12xx.ko      /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/wl12xx_sdio.ko /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/ir-kbd-i2c.ko  /tmp/smi-ramdisk/lib/modules/
 	# Done with driver workarounds...
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
 	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
