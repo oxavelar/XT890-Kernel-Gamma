@@ -65,18 +65,20 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -fvariable-expansion-in-unroller \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
-        --param l2-cache-size=512
+        --param l2-cache-size=512 \
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
-export CFLAGS_platform_max17042.o    := -fno-tree-vectorize
-export CFLAGS_max17042_battery.o     := -fno-tree-vectorize
-export CFLAGS_intel_mdf_battery.o    := -fno-tree-vectorize
+export CFLAGS_platform_max17042.o      := -fno-tree-vectorize
+export CFLAGS_max17042_battery.o       := -fno-tree-vectorize
+export CFLAGS_intel_mdf_battery.o      := -fno-tree-vectorize
 
 # Keeping some external modules safe, not risking it here
-export CFLAGS_gps_drv.o              := -O2 -fno-fast-math -fno-unroll-loops
-export CFLAGS_videobuf2-core.o       := -O2 -fno-fast-math -fno-unroll-loops
-export CFLAGS_videobuf2-memops.o     := -O2 -fno-fast-math -fno-unroll-loops
+export CFLAGS_gps_drv.o                := -O2 -fno-fast-math -fno-unroll-loops
+export CFLAGS_videobuf2-core.o         := -O3 -fno-fast-math -fno-unroll-loops
+export CFLAGS_videobuf2-memops.o       := -O3 -fno-fast-math -fno-unroll-loops
+export CFLAGS_atomisp.o                := -O3 -fno-fast-math -fno-unroll-loops
+export CFLAGS_mt9e013.o                := -O3 -fno-fast-math -fno-unroll-loops
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
