@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -105,6 +105,7 @@ bootimage: kernel modules
 	cp -f $(PWD)/root/lib/modules/wl12xx.ko      /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/wl12xx_sdio.ko /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/ir-kbd-i2c.ko  /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/videobuf2-*.ko /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/intel_mid_ssp_test_driver.ko /tmp/smi-ramdisk/lib/modules/
 	# Done with driver workarounds...
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
