@@ -621,7 +621,7 @@ static inline void dbs_timer_exit(struct cpu_dbs_info_s *dbs_info)
 	cancel_delayed_work_sync(&dbs_info->work);
 }
 
-static void hotplug_suspend(int suspend)
+static void __cpuinit hotplug_suspend(int suspend)
 {
 	if (!susp_enabled) return;
         if (!suspend) {
@@ -638,7 +638,7 @@ static void hotplug_early_suspend(struct early_suspend *handler) {
      if (!registration) hotplug_suspend(1);
 }
 
-static void hotplug_late_resume(struct early_suspend *handler) {
+static void __cpuinit hotplug_late_resume(struct early_suspend *handler) {
      hotplug_suspend(0);
 }
 

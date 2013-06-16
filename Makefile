@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -76,19 +76,19 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 
 # Keeping some external modules safe, not risking it here
 export CFLAGS_gps_drv.o                     := -O2 -fno-fast-math
-export CFLAGS_videobuf2-core.o              := -O2 -fno-fast-math
-export CFLAGS_videobuf2-memops.o            := -O2 -fno-fast-math
-export CFLAGS_atomisp.o                     := -O2 -fno-fast-math
+export CFLAGS_videobuf2-core.o              := -O3 -fno-fast-math
+export CFLAGS_videobuf2-memops.o            := -O3 -fno-fast-math
+export CFLAGS_atomisp.o                     := -O3 -fno-fast-math
 export CFLAGS_mt9e013.o                     := -O2 -fno-fast-math
 export CFLAGS_ov7736.o                      := -O2 -fno-fast-math
 export CFLAGS_ir-kbd-i2c.o                  := -O2 -fno-fast-math
-export CFLAGS_intel_mid_ssp_test_driver.o   := -O2 -fno-fast-math
+export CFLAGS_intel_mid_ssp_test_driver.o   := -O3 -fno-fast-math
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
@@ -105,6 +105,7 @@ bootimage: kernel modules
 	cp -f $(PWD)/root/lib/modules/wl12xx.ko      /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/wl12xx_sdio.ko /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/ir-kbd-i2c.ko  /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/intel_mid_ssp_test_driver.ko /tmp/smi-ramdisk/lib/modules/
 	# Done with driver workarounds...
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
 	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
