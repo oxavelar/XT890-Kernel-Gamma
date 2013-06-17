@@ -38,25 +38,25 @@ static unsigned int susp_enabled = 0;
 static unsigned int suspended = 0;
 static unsigned int registration = 0;
 static unsigned int suspend_cpu_up = 95;
-static unsigned int highfreq = 1350000;
+static unsigned int highfreq = 2000000;
 
 /* greater than 80% avg load across online CPUs increases frequency */
-#define DEFAULT_UP_FREQ_MIN_LOAD			(80)
+#define DEFAULT_UP_FREQ_MIN_LOAD			(90)
 
 /* Keep 10% of idle under the up threshold when decreasing the frequency */
-#define DEFAULT_FREQ_DOWN_DIFFERENTIAL			(10)
+#define DEFAULT_FREQ_DOWN_DIFFERENTIAL		(10)
 
 /* less than 35% avg load across online CPUs decreases frequency */
-#define DEFAULT_DOWN_FREQ_MAX_LOAD			(35)
+#define DEFAULT_DOWN_FREQ_MAX_LOAD (45)
 
 /* default sampling period (uSec) is bogus; 10x ondemand's default for x86 */
-#define DEFAULT_SAMPLING_PERIOD				(100000)
+#define DEFAULT_SAMPLING_PERIOD (100000)
 
 /* default number of sampling periods to average before hotplug-in decision */
-#define DEFAULT_HOTPLUG_IN_SAMPLING_PERIODS		(5)
+#define DEFAULT_HOTPLUG_IN_SAMPLING_PERIODS (5)
 
 /* default number of sampling periods to average before hotplug-out decision */
-#define DEFAULT_HOTPLUG_OUT_SAMPLING_PERIODS		(20)
+#define DEFAULT_HOTPLUG_OUT_SAMPLING_PERIODS (20)
 
 static void do_dbs_timer(struct work_struct *work);
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
