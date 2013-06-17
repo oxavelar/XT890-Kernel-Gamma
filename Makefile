@@ -74,16 +74,6 @@ export CFLAGS_platform_max17042.o           := -fno-tree-vectorize
 export CFLAGS_max17042_battery.o            := -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 
-# Keeping some external modules safe, not risking it here
-export CFLAGS_gps_drv.o                     := -O2 -fno-fast-math
-export CFLAGS_videobuf2-core.o              := -O3 -fno-fast-math
-export CFLAGS_videobuf2-memops.o            := -O3 -fno-fast-math
-export CFLAGS_atomisp.o                     := -O3 -fno-fast-math
-export CFLAGS_mt9e013.o                     := -O2 -fno-fast-math
-export CFLAGS_ov7736.o                      := -O2 -fno-fast-math
-export CFLAGS_ir-kbd-i2c.o                  := -O2 -fno-fast-math
-export CFLAGS_intel_mid_ssp_test_driver.o   := -O3 -fno-fast-math
-
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
@@ -99,21 +89,18 @@ bootimage: kernel modules
 	# Copy the existing modules to the ramdisk path
 	find $(KBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	# Workarounds, avoiding recompile of certain modules for now...
-	cp -f $(PWD)/root/lib/modules/compat.ko      /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/cfg80211.ko    /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/mac80211.ko    /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/wl12xx.ko      /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/wl12xx_sdio.ko /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/ir-kbd-i2c.ko  /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/videobuf2-*.ko /tmp/smi-ramdisk/lib/modules/
-	cp -f $(PWD)/root/lib/modules/intel_mid_ssp_test_driver.ko /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/compat.ko       /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/cfg80211.ko     /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/mac80211.ko     /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/wl12xx.ko       /tmp/smi-ramdisk/lib/modules/
+	cp -f $(PWD)/root/lib/modules/wl12xx_sdio.ko  /tmp/smi-ramdisk/lib/modules/
 	# Done with driver workarounds...
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
 	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
 	cp $(KBUILD_OUT_PATH)/arch/x86/boot/bzImage $(OUT_PATH)/kernel
 	# Pack the boot.img
 	$(PWD)/tools/mkbootimg --kernel $(OUT_PATH)/kernel \
-	 --ramdisk $(OUT_PATH)/ramdisk.cpio.gz                \
+	 --ramdisk $(OUT_PATH)/ramdisk.cpio.gz             \
 	 --cmdline $(BOOT_CMDLINE) --output $(PWD)/out/
 
 .PHONY: kernel
@@ -125,10 +112,16 @@ kernel:
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
 
+.PHONY: modules
 modules: kernel
-	mkdir -p $(KBUILD_OUT_PATH)
-	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
-	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) modules
+	#$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
+	# Keeping external modules flags on the safe side
+	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) modules \
+	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe -march=atom \
+	 -msse -msse3 -mssse3 -mpclmul -mcx16 -msahf -mmovbe         \
+	 --param l1-cache-line-size=64                               \
+	 --param l1-cache-size=24                                    \
+	 --param l2-cache-size=512"                                  \
 
 .PHONY: clean
 clean:
