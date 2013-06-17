@@ -34,6 +34,7 @@ KDEFCONFIG = i386_mfld_oxavelar_defconfig
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 OUT_PATH = $(PWD)/out
 KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
+MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 ############################################################################
 #################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ################
@@ -87,7 +88,7 @@ bootimage: kernel modules
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
 	# Copy the existing modules to the ramdisk path
-	find $(KBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
+	find $(MBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	# Workarounds, avoiding recompile of certain modules for now...
 	cp -f $(PWD)/root/lib/modules/compat.ko       /tmp/smi-ramdisk/lib/modules/
 	cp -f $(PWD)/root/lib/modules/cfg80211.ko     /tmp/smi-ramdisk/lib/modules/
@@ -113,10 +114,11 @@ kernel:
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
 
 .PHONY: modules
-modules: kernel
-	#$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
+modules:
+	mkdir -p $(MBUILD_OUT_PATH)
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) modules \
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules \
 	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe -march=atom \
 	 -msse -msse3 -mssse3 -mpclmul -mcx16 -msahf -mmovbe         \
 	 --param l1-cache-line-size=64                               \
