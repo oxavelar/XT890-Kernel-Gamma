@@ -167,7 +167,7 @@ static
 struct cpufreq_governor cpufreq_gov_smartassv2 = {
 	.name = "smartassV2",
 	.governor = cpufreq_governor_smartass,
-	.max_transition_latency = 9000000,
+	.max_transition_latency = 10000000,
 	.owner = THIS_MODULE,
 };
 
