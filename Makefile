@@ -105,7 +105,7 @@ bootimage: kernel modules
 	 --cmdline $(BOOT_CMDLINE) --output $(PWD)/out/
 
 .PHONY: kernel
-kernel:
+kernel: modules
 	mkdir -p $(KBUILD_OUT_PATH)
 	# I edited MAGIC_STRING to load Motorola's precompiled modules without issue
 	##define VERMAGIC_STRING \
@@ -120,7 +120,7 @@ modules:
 	# Keeping external modules flags on the safe side
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules \
 	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe -march=atom \
-	 -msse -msse3 -mssse3 -mpclmul -mcx16 -msahf -mmovbe         \
+	 -mpclmul -mcx16 -msahf -mmovbe                              \
 	 --param l1-cache-line-size=64                               \
 	 --param l1-cache-size=24                                    \
 	 --param l2-cache-size=512"                                  \
