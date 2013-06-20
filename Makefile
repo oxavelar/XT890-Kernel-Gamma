@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -44,10 +44,9 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O3 \
         -pipe \
+        -mx32 \
         -march=atom \
-        -mfpmath=sse \
-        -msse \
-        -msse3 \
+        -mfpmath=387 \
         -mssse3 \
         -mpclmul \
         -mcx16 \
@@ -59,6 +58,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -floop-interchange \
         -floop-strip-mine \
         -floop-parallelize-all \
+        -ftree-vectorize \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
@@ -75,11 +75,13 @@ export CFLAGS_platform_max17042.o           := -fno-tree-vectorize
 export CFLAGS_max17042_battery.o            := -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 
+export LDFLAGS                              := -Wl,-O1
+
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
@@ -118,9 +120,11 @@ modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules \
-	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe -march=atom \
-	 -mpclmul -mcx16 -msahf -mmovbe                              \
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules         \
+	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe             \
+     -mx32 -march=atom                                           \
+     -mssse3 -mpclmul -mcx16 -msahf -mmovbe                      \
+     -fomit-frame-pointer -ftree-vectorize                       \
 	 --param l1-cache-line-size=64                               \
 	 --param l1-cache-size=24                                    \
 	 --param l2-cache-size=512"                                  \

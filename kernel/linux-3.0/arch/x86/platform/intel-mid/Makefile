@@ -1,7 +1,7 @@
-#CFLAGS_intel_soc_pm_debug.o		:= -Werror
-#CFLAGS_intel_soc_pmu.o			:= -Werror
-#CFLAGS_intel_soc_mdfld.o		:= -Werror
-#CFLAGS_intel_soc_clv.o			:= -Werror
+CFLAGS_intel_soc_pm_debug.o		:= -Werror
+CFLAGS_intel_soc_pmu.o			:= -Werror
+CFLAGS_intel_soc_mdfld.o		:= -Werror
+CFLAGS_intel_soc_clv.o			:= -Werror
 
 # platform configuration for board devices
 obj-y					+= device_libs/

@@ -2,7 +2,7 @@
 # Makefile for the PCI bus specific drivers.
 #
 
-#CFLAGS_intel_soc_pci.o	:= -Werror
+CFLAGS_intel_soc_pci.o	:= -Werror
 
 obj-y		+= access.o bus.o probe.o remove.o pci.o \
 			pci-driver.o search.o pci-sysfs.o rom.o setup-res.o \
