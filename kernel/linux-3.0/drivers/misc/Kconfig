@@ -555,7 +555,7 @@ config APANIC_PLABEL
 config MID_I2S_DEV
 	tristate "Test device driver for Intel MID I2S protocol on SSP"
         depends on SND_INTEL_MID_I2S
-	default m
+	default n
 	help
 	  This driver provides support for sending/receiving I2S
 	  samples to Bluetooth device WL1271/3.

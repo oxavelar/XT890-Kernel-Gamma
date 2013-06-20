@@ -20,6 +20,8 @@ on init
     mkdir /storage/sdcard1 0000 system system
     export SECONDARY_STORAGE /storage/sdcard1
 
+    insmod /lib/modules/st_drv.ko
+    insmod /lib/modules/fm_drv.ko
     insmod /lib/modules/gps_drv.ko
 
     chmod 0660 /sys/class/gpio/gpio157/value
@@ -30,7 +32,7 @@ on init
     # See vendor/intel/common/init.mfld.usb.rc
     #write /sys/class/android_usb/android0/enable 0
     #write /sys/class/android_usb/android0/functions adb
-    #write /sys/class/android_usb/android0/iManufacturer "HTC"
+    #write /sys/class/android_usb/android0/iManufacturer "Motorola"
     #write /sys/class/android_usb/android0/iProduct "Android-Phone"
     #write /sys/class/android_usb/android0/iSerial "Medfield12345678"
     #write /sys/class/android_usb/android0/idProduct 0x0c01
