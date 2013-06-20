@@ -277,11 +277,6 @@ service atvc /system/bin/dbvc_atvc_property_set
     group mot_tpapi
     oneshot
 
-on property:sys.boot_completed=1
-    # Insert matrix for PnP measurements
-    #insmod /lib/modules/matrix.ko
-    #chmod 0640 /dev/matrix
-
 # For LBS
 service gkisystem /system/bin/gkisystem
     class main
@@ -359,11 +354,6 @@ on property:sys.mot.encrypt.pass.prot=1
     setprop sys.mot.encrypt.pass.prot ""
 # Enable production security key check for 3LM
     setprop ro.3lm.production 1
-
-# Run multiconfig script to check if config is updated
-service start_mc_service /system/bin/sh /system/bin/multiconfig_boot_script.sh
-    class main
-    oneshot
 
 service batt_health /system/bin/batt_health
     class main
