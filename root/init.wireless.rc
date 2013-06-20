@@ -162,9 +162,6 @@ service iprenew_bnep0 /system/bin/dhcpcd -nBK
 service hciattach /system/xbin/hciconfig hci0 up
     class main
     user bluetooth
-# changing user to root from bluetooth is a potential security issue
-# service hciattach_legacy is used instead of hciattach because, we dont
-# have nodes named ttyHS0
     group bluetooth net_bt_admin misc
     disabled
     oneshot
