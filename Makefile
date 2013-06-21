@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -46,7 +46,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -mx32 \
         -march=atom \
-        -mfpmath=both \
+        -mfpmath=387 \
         -mssse3 \
         -mpclmul \
         -mcx16 \
@@ -122,9 +122,9 @@ modules:
 	# Keeping external modules flags on the safe side
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules         \
 	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe             \
-     -mx32 -march=atom                                           \
-     -mssse3 -mpclmul -mcx16 -msahf -mmovbe                      \
-     -fomit-frame-pointer -ftree-vectorize                       \
+	 -mx32 -march=atom                                           \
+	 -mssse3 -mpclmul -mcx16 -msahf -mmovbe                      \
+	 -fomit-frame-pointer -ftree-vectorize                       \
 	 --param l1-cache-line-size=64                               \
 	 --param l1-cache-size=24                                    \
 	 --param l2-cache-size=512"                                  \
