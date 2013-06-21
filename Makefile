@@ -46,7 +46,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -mx32 \
         -march=atom \
-        -mfpmath=387 \
+        -mfpmath=both \
         -mssse3 \
         -mpclmul \
         -mcx16 \
