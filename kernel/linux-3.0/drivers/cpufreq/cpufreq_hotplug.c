@@ -66,9 +66,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 static
 #endif
 struct cpufreq_governor cpufreq_gov_hotplug = {
-       .name                   = "hotplugx",
-       .governor               = cpufreq_governor_dbs,
-       .owner                  = THIS_MODULE,
+       .name = "hotplugx",
+       .governor = cpufreq_governor_dbs,
+       .owner = THIS_MODULE,
 };
 
 struct cpu_dbs_info_s {
@@ -110,15 +110,15 @@ static struct dbs_tuners {
 	unsigned int ignore_nice;
 	unsigned int io_is_busy;
 } dbs_tuners_ins = {
-	.sampling_rate =		DEFAULT_SAMPLING_PERIOD,
-	.up_threshold =			DEFAULT_UP_FREQ_MIN_LOAD,
-	.down_differential =            DEFAULT_FREQ_DOWN_DIFFERENTIAL,
-	.down_threshold =		DEFAULT_DOWN_FREQ_MAX_LOAD,
-	.hotplug_in_sampling_periods =	DEFAULT_HOTPLUG_IN_SAMPLING_PERIODS,
-	.hotplug_out_sampling_periods =	DEFAULT_HOTPLUG_OUT_SAMPLING_PERIODS,
-	.hotplug_load_index =		0,
-	.ignore_nice =			0,
-	.io_is_busy =			0,
+	.sampling_rate = DEFAULT_SAMPLING_PERIOD,
+	.up_threshold = DEFAULT_UP_FREQ_MIN_LOAD,
+	.down_differential = DEFAULT_FREQ_DOWN_DIFFERENTIAL,
+	.down_threshold = DEFAULT_DOWN_FREQ_MAX_LOAD,
+	.hotplug_in_sampling_periods = DEFAULT_HOTPLUG_IN_SAMPLING_PERIODS,
+	.hotplug_out_sampling_periods = DEFAULT_HOTPLUG_OUT_SAMPLING_PERIODS,
+	.hotplug_load_index = 0,
+	.ignore_nice = 0,
+	.io_is_busy = 0,
 };
 
 /*

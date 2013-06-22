@@ -71,7 +71,7 @@ static unsigned int hispeed_freq;
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 95
+#define DEFAULT_TARGET_LOAD 90
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -80,13 +80,13 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (60 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (70 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
  * The sample rate of the timer used to increase frequency
  */
-#define DEFAULT_TIMER_RATE (120 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE (140 * USEC_PER_MSEC)
 static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 
 /*
@@ -114,7 +114,20 @@ static u64 boostpulse_endtime;
 #define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
-static bool io_is_busy;
+/*
+* Not all CPUs want IO time to be accounted as busy; this dependson how
+* efficient idling at a higher frequency/voltage is.
+* Pavel Machek says this is not so for various generations of AMD and old
+* Intel systems.
+* Mike Chan (androidlcom) calis this is also not true for ARM.
+* Because of this, whitelist specific known (series) of CPUs by default, and
+* leave all others up to the user.
+*/
+#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
+static bool io_is_busy = 1;
+#else
+static bool io_is_busy = 0;
+#endif
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);

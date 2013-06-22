@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -46,7 +46,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -mx32 \
         -march=atom \
-        -mfpmath=387 \
         -mssse3 \
         -mpclmul \
         -mcx16 \
@@ -74,8 +73,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 export CFLAGS_platform_max17042.o           := -fno-tree-vectorize
 export CFLAGS_max17042_battery.o            := -fno-tree-vectorize
 export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
-
-export LDFLAGS                              := -Wl,-O1
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
