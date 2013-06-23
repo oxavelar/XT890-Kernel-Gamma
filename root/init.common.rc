@@ -73,16 +73,15 @@ on boot
 
     # Reducing write latencies, we got eMMC's + SD
     write /sys/block/mmcblk0/queue/nr_requests 32
-    write /sys/block/mmcblk1/queue/nr_requests 2048
+    write /sys/block/mmcblk1/queue/nr_requests 512
 
     # Memory and caching boosts
-    write /proc/sys/vm/dirty_expire_centisecs 4000
-    write /proc/sys/vm/dirty_writeback_centisecs 4000
-    write /proc/sys/vm/dirty_ratio 90
+    write /proc/sys/vm/dirty_expire_centisecs 6000
+    write /proc/sys/vm/dirty_writeback_centisecs 1250
+    write /proc/sys/vm/dirty_ratio 99
     write /proc/sys/vm/dirty_background_ratio 2
     write /proc/sys/vm/vfs_cache_pressure 1
     write /proc/sys/vm/dirty_bytes 0
-    write /proc/sys/vm/dirty_background_bytes 5242880
 
     # Default Read Ahead value for sdcards
     write /sys/block/mmcblk0/queue/read_ahead_kb 128
@@ -100,8 +99,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk0/queue/iosched/slice_idle 0
     write /sys/block/mmcblk1/queue/iosched/slice_idle 0
-    write /sys/block/mmcblk0/queue/iosched/quantum 160
-    write /sys/block/mmcblk1/queue/iosched/quantum 160
+    write /sys/block/mmcblk0/queue/iosched/quantum 72
+    write /sys/block/mmcblk1/queue/iosched/quantum 72
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576
