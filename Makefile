@@ -118,7 +118,7 @@ modules:
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules         \
-	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe             \
+	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe -fno-pic    \
 	 -mx32 -march=atom                                           \
 	 -mssse3 -mpclmul -mcx16 -msahf -mmovbe                      \
 	 -fomit-frame-pointer -ftree-vectorize                       \
