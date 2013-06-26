@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -52,8 +52,14 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -msahf \
         -mmovbe \
         -ftree-vectorize \
-        -ffast-math \
         -fomit-frame-pointer \
+        -finline-functions \
+        -fno-exceptions \
+        -fpredictive-commoning \
+        -fgcse-after-reload \
+        -fforce-addr \
+        -ffast-math \
+        -fsingle-precision-constant \
         -floop-block \
         -floop-interchange \
         -floop-strip-mine \
@@ -62,8 +68,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
         -fpeel-loops \
-        -funroll-loops \
-        -fvariable-expansion-in-unroller \
+        -funswitch-loops \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
         --param l2-cache-size=512 \
@@ -117,14 +122,7 @@ modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules         \
-	 ANDROID_TOOLCHAIN_FLAGS="-O2 -mno-android -pipe -fno-pic    \
-	 -mx32 -march=atom                                           \
-	 -mssse3 -mpclmul -mcx16 -msahf -mmovbe                      \
-	 -fomit-frame-pointer -ftree-vectorize                       \
-	 --param l1-cache-line-size=64                               \
-	 --param l1-cache-size=24                                    \
-	 --param l2-cache-size=512"                                  \
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules
 
 .PHONY: clean
 clean:
