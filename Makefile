@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -67,8 +67,9 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
-        -fpeel-loops \
-        -funswitch-loops \
+        -ftree-loop-distribution \
+        -foptimize-register-move \
+        -fgraphite-identity \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
         --param l2-cache-size=512 \
