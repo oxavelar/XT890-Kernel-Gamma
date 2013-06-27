@@ -44,8 +44,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O2 \
         -pipe \
-        -m32 \
         -flto \
+        -m32 \
         -march=atom \
         -mssse3 \
         -mpclmul \
@@ -89,7 +89,7 @@ earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
-bootimage: kernel modules
+bootimage: kernel
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
 	# Copy the existing modules to the ramdisk path
@@ -123,7 +123,7 @@ modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
 
 .PHONY: clean
 clean:
