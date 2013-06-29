@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -93,7 +93,7 @@ earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
-bootimage: kernel
+bootimage: kernel modules
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
 	# Copy the existing modules to the ramdisk path
@@ -114,7 +114,7 @@ bootimage: kernel
 	 --cmdline $(BOOT_CMDLINE) --output $(PWD)/out/
 
 .PHONY: kernel
-kernel: modules
+kernel:
 	mkdir -p $(KBUILD_OUT_PATH)
 	# I edited MAGIC_STRING to load Motorola's precompiled modules without issue
 	##define VERMAGIC_STRING \
