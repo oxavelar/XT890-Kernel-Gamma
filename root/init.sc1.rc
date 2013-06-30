@@ -1,6 +1,5 @@
 import init.common.rc
 import init.oom.rc
-import init.diag.rc
 import init.avc.rc
 import init.wireless.rc
 import init.smi.rc
