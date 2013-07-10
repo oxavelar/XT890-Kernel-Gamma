@@ -88,7 +88,7 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6"
 
