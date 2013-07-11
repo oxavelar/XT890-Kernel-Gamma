@@ -85,7 +85,7 @@ on boot
 
     # Default Read Ahead value for sdcard devices
     write /sys/block/mmcblk0/queue/read_ahead_kb 128
-    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
+    write /sys/block/mmcblk1/queue/read_ahead_kb 1024
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
@@ -99,8 +99,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk0/queue/iosched/slice_idle 0
     write /sys/block/mmcblk1/queue/iosched/slice_idle 0
-    write /sys/block/mmcblk0/queue/iosched/quantum 4
-    write /sys/block/mmcblk1/queue/iosched/quantum 4
+    write /sys/block/mmcblk0/queue/iosched/quantum 256
+    write /sys/block/mmcblk1/queue/iosched/quantum 256
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576
