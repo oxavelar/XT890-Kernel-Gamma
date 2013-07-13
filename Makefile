@@ -88,7 +88,7 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
 androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6"
 
@@ -107,7 +107,6 @@ bootimage: kernel modules
 	# Done with driver workarounds...
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
 	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
-	cp $(KBUILD_OUT_PATH)/arch/x86/boot/bzImage $(OUT_PATH)/kernel
 	# Pack the boot.img
 	$(PWD)/tools/mkbootimg --kernel $(OUT_PATH)/kernel \
 	 --ramdisk $(OUT_PATH)/ramdisk.cpio.gz             \
@@ -121,6 +120,7 @@ kernel:
 	#        "3.0.34-gc6f8fd7 SMP preempt mod_unload ATOM "
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) $(KDEFCONFIG)
 	$(MAKE) -C $(KSRC_PATH) O=$(KBUILD_OUT_PATH) bzImage
+	cp $(KBUILD_OUT_PATH)/arch/x86/boot/bzImage $(OUT_PATH)/kernel
 
 .PHONY: modules
 modules:
