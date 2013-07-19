@@ -42,10 +42,9 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -O2 \
+        -O3 \
         -pipe \
         -flto \
-        -m32 \
         -march=atom \
         -mmmx \
         -msse \
@@ -127,7 +126,7 @@ modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) modules ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
 
 .PHONY: clean
 clean:
