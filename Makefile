@@ -42,7 +42,7 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -O3 \
+        -O2 \
         -pipe \
         -flto \
         -march=atom \
@@ -87,9 +87,9 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M \
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=384M \
 earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard \
-androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6"
+androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=3"
 
 .PHONY: bootimage
 bootimage: kernel modules
