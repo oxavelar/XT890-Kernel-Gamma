@@ -77,7 +77,7 @@ on boot
 
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 6000
-    write /proc/sys/vm/dirty_writeback_centisecs 1250
+    write /proc/sys/vm/dirty_writeback_centisecs 1500
     write /proc/sys/vm/dirty_ratio 99
     write /proc/sys/vm/dirty_background_ratio 2
     write /proc/sys/vm/vfs_cache_pressure 1
@@ -86,7 +86,7 @@ on boot
 
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
-    write /sys/kernel/mm/ksm/sleep_millisecs 1250
+    write /sys/kernel/mm/ksm/sleep_millisecs 3000
     write /sys/kernel/mm/ksm/pages_to_scan 256
 
     # Default Read Ahead value for sdcard devices
