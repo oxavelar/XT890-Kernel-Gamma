@@ -41,7 +41,7 @@ on boot
     chmod 0664 /sys/class/backlight/psb-bl/actual_brightness
 
     # Reduce backlight prior booting
-    write /sys/class/backlight/psb-bl/brightness 40
+    write /sys/class/backlight/psb-bl/brightness 25
 
     # SMP uses shared policies
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactivex
@@ -78,7 +78,7 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 6000
     write /proc/sys/vm/dirty_writeback_centisecs 1500
-    write /proc/sys/vm/dirty_ratio 99
+    write /proc/sys/vm/dirty_ratio 80
     write /proc/sys/vm/dirty_background_ratio 2
     write /proc/sys/vm/vfs_cache_pressure 1
     write /proc/sys/vm/dirty_bytes 0
@@ -87,7 +87,6 @@ on boot
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
     write /sys/kernel/mm/ksm/sleep_millisecs 3000
-    write /sys/kernel/mm/ksm/pages_to_scan 256
 
     # Default Read Ahead value for sdcard devices
     write /sys/block/mmcblk0/queue/read_ahead_kb 128
