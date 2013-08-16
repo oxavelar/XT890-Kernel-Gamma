@@ -118,7 +118,7 @@ static u64 boostpulse_endtime;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
+#define DEFAULT_TIMER_SLACK (5 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 /*
@@ -130,11 +130,12 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 * Because of this, whitelist specific known (series) of CPUs by default, and
 * leave all others up to the user.
 */
-#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
+/*#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
 static bool io_is_busy = 1;
 #else
 static bool io_is_busy = 0;
-#endif
+#endif*/
+static bool io_is_busy = 0;
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
