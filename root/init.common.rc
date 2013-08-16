@@ -89,8 +89,8 @@ on boot
     write /sys/kernel/mm/ksm/sleep_millisecs 4000
     
     # Transparent Hugepages (THP)
-    write /sys/kernel/mm/transparent_hugepage/enabled always
-    write /sys/kernel/mm/transparent_hugepage/defrag always
+    write /sys/kernel/mm/transparent_hugepage/enabled madvise
+    write /sys/kernel/mm/transparent_hugepage/defrag madvise
     write /sys/kernel/mm/transparent_hugepage/khugepaged/defrag 1
     write /sys/kernel/mm/transparent_hugepage/khugepaged/scan_sleep_millisecs 40000
 
