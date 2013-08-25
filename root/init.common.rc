@@ -78,17 +78,23 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 1600
     write /proc/sys/vm/dirty_writeback_centisecs 400
-    write /proc/sys/vm/dirty_ratio 80
+    write /proc/sys/vm/dirty_ratio 99
     write /proc/sys/vm/dirty_background_ratio 5
-    write /proc/sys/vm/vfs_cache_pressure 40
+    write /proc/sys/vm/vfs_cache_pressure 20
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 2097152
 
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
+    write /sys/kernel/mm/ksm/pages_to_scan 1024
     write /sys/kernel/mm/ksm/sleep_millisecs 4000
     
     # Transparent Hugepages (THP)
+    write /sys/kernel/mm/transparent_hugepage/enabled madvise
+    write /sys/kernel/mm/transparent_hugepage/defrag madvise
+    write /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none 511
+    write /sys/kernel/mm/transparent_hugepage/khugepaged/pages_to_scan 1024
+    write /sys/kernel/mm/transparent_hugepage/khugepaged/alloc_sleep_millisecs 4000
     write /sys/kernel/mm/transparent_hugepage/khugepaged/scan_sleep_millisecs 40000
 
     # Default Read Ahead value for sdcard devices
@@ -107,8 +113,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk0/queue/iosched/slice_idle 0
     write /sys/block/mmcblk1/queue/iosched/slice_idle 0
-    write /sys/block/mmcblk0/queue/iosched/quantum 24
-    write /sys/block/mmcblk1/queue/iosched/quantum 24
+    write /sys/block/mmcblk0/queue/iosched/quantum 20
+    write /sys/block/mmcblk1/queue/iosched/quantum 20
 
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
