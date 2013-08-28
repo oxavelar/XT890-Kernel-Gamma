@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -63,6 +63,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -fforce-addr \
         -ffast-math \
         -fsingle-precision-constant \
+        -falign-functions=4 \
+        -floop-optimize \
         -floop-block \
         -floop-interchange \
         -floop-strip-mine \
@@ -76,6 +78,9 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
         --param l2-cache-size=512 \
+
+export LDFLAGS := -Wl,-O1
+export LDFLAGS_MODULE := $(LDFLAGS)
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
@@ -124,7 +129,7 @@ modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
 
 .PHONY: clean
 clean:

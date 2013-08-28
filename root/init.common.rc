@@ -80,7 +80,7 @@ on boot
     write /proc/sys/vm/dirty_writeback_centisecs 400
     write /proc/sys/vm/dirty_ratio 99
     write /proc/sys/vm/dirty_background_ratio 5
-    write /proc/sys/vm/vfs_cache_pressure 20
+    write /proc/sys/vm/vfs_cache_pressure 1
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 2097152
 
@@ -90,8 +90,8 @@ on boot
     write /sys/kernel/mm/ksm/sleep_millisecs 4000
     
     # Transparent Hugepages (THP)
-    write /sys/kernel/mm/transparent_hugepage/enabled madvise
-    write /sys/kernel/mm/transparent_hugepage/defrag madvise
+    write /sys/kernel/mm/transparent_hugepage/enabled never
+    write /sys/kernel/mm/transparent_hugepage/defrag never
     write /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none 511
     write /sys/kernel/mm/transparent_hugepage/khugepaged/pages_to_scan 1024
     write /sys/kernel/mm/transparent_hugepage/khugepaged/alloc_sleep_millisecs 4000
