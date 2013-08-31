@@ -87,15 +87,15 @@ on boot
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
     write /sys/kernel/mm/ksm/pages_to_scan 2048
-    write /sys/kernel/mm/ksm/sleep_millisecs 4000
+    write /sys/kernel/mm/ksm/sleep_millisecs 8000
     
     # Transparent Hugepages (THP)
-    write /sys/kernel/mm/transparent_hugepage/enabled madvise
-    write /sys/kernel/mm/transparent_hugepage/defrag madvise
+    write /sys/kernel/mm/transparent_hugepage/enabled never
+    write /sys/kernel/mm/transparent_hugepage/defrag never
     write /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none 511
     write /sys/kernel/mm/transparent_hugepage/khugepaged/pages_to_scan 1024
-    write /sys/kernel/mm/transparent_hugepage/khugepaged/alloc_sleep_millisecs 4000
-    write /sys/kernel/mm/transparent_hugepage/khugepaged/scan_sleep_millisecs 40000
+    write /sys/kernel/mm/transparent_hugepage/khugepaged/alloc_sleep_millisecs 8000
+    write /sys/kernel/mm/transparent_hugepage/khugepaged/scan_sleep_millisecs 80000
 
     # Default Read Ahead value for sdcard devices
     write /sys/block/mmcblk0/queue/read_ahead_kb 128
