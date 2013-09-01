@@ -1,7 +1,6 @@
 #
 # ADDITIONAL_DEFAULT_PROPERTIES
 #
-keyguard.no_require_sim=false
 panel.physicalWidthmm=52
 panel.physicalHeightmm=89
 ro.opengles.version=131072

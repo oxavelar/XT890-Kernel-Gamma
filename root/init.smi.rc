@@ -18,7 +18,9 @@ on property:ro.build.type=user
 
 service fmradio /system/bin/fmradioserver
     class main
-    group bluetooth net_bt_admin
+    user system
+    group bluetooth net_bt_admin net_raw net_admin misc
+    disabled
 
 service charge_only_mode /system/bin/charge_only_mode
     class charger

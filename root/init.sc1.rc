@@ -259,20 +259,6 @@ on boot
     chmod 0660 /sys/devices/pci0000:00/0000:00:02.0/elvss_tth_status
     chown system system /sys/devices/pci0000:00/0000:00:02.0/elvss_tth_status
 
-# Access Token
-service atvc_core /system/bin/dbvc_atvc_property_set
-    class main
-    user mot_atvc
-    group mot_tpapi
-    oneshot
-
-# Access Token
-service atvc /system/bin/dbvc_atvc_property_set
-    class late_start
-    user mot_atvc
-    group mot_tpapi
-    oneshot
-
 # For LBS
 service gkisystem /system/bin/gkisystem
     class main
@@ -295,13 +281,6 @@ service akmd8963 /system/bin/akmd8963
     class main
     user compass
     group compass misc input
-
-# FM radio
-service fmradio /system/bin/fmradioserver
-    class main
-    user system
-    group bluetooth net_bt_admin net_raw net_admin misc
-    disabled
 
 # Authentec VPN
 service vpnclientpm /system/bin/vpnclientpm
