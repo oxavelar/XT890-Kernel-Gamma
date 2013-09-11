@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -63,8 +63,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -fforce-addr \
         -fsingle-precision-constant \
         -falign-functions=4 \
-        -floop-block \
         -floop-parallelize-all \
+        -floop-block \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
