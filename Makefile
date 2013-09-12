@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -125,7 +125,7 @@ modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	# Keeping external modules flags on the safe side
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
 
 .PHONY: clean
 clean:
