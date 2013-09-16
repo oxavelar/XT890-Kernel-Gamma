@@ -78,9 +78,9 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 1600
     write /proc/sys/vm/dirty_writeback_centisecs 400
-    write /proc/sys/vm/dirty_ratio 99
-    write /proc/sys/vm/dirty_background_ratio 1
-    write /proc/sys/vm/vfs_cache_pressure 20
+    write /proc/sys/vm/dirty_ratio 80
+    write /proc/sys/vm/dirty_background_ratio 2
+    write /proc/sys/vm/vfs_cache_pressure 2
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
