@@ -71,6 +71,9 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
+    # The scheduler tries to schedule processes on the least number H-Threads
+    write /sys/devices/system/cpu/sched_smt_power_savings 1
+
     # Reducing write latencies, we got eMMC's + SD
     write /sys/block/mmcblk0/queue/nr_requests 8
     write /sys/block/mmcblk1/queue/nr_requests 256
@@ -78,9 +81,9 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 1600
     write /proc/sys/vm/dirty_writeback_centisecs 400
-    write /proc/sys/vm/dirty_ratio 99
-    write /proc/sys/vm/dirty_background_ratio 1
-    write /proc/sys/vm/vfs_cache_pressure 20
+    write /proc/sys/vm/dirty_ratio 80
+    write /proc/sys/vm/dirty_background_ratio 40
+    write /proc/sys/vm/vfs_cache_pressure 5
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
