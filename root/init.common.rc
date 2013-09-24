@@ -82,10 +82,8 @@ on boot
     write /proc/sys/vm/dirty_expire_centisecs 1600
     write /proc/sys/vm/dirty_writeback_centisecs 400
     write /proc/sys/vm/dirty_ratio 80
-    write /proc/sys/vm/dirty_background_ratio 40
-    write /proc/sys/vm/vfs_cache_pressure 5
-    write /proc/sys/vm/dirty_bytes 0
-    write /proc/sys/vm/dirty_background_bytes 0
+    write /proc/sys/vm/dirty_background_ratio 60
+    write /proc/sys/vm/vfs_cache_pressure 40
 
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
