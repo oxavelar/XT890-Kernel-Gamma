@@ -150,7 +150,7 @@ void sst_send_lpe_mixer_algo_params(void)
 
 	retval = intel_sst_check_device();
 	if (retval)
-		return retval;
+		return;
 
 	mutex_lock(&sst_drv_ctx->mixer_ctrl_lock);
 	input_mixer = (sst_drv_ctx->device_input_mixer)
