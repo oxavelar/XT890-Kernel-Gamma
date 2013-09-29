@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -47,8 +47,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -flto \
         -march=atom \
-        -mmmx \
-        -msse \
         -msse2 \
         -msse3 \
         -mssse3 \
@@ -63,7 +61,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -fgcse-after-reload \
         -fforce-addr \
         -fsingle-precision-constant \
-        -falign-functions=4 \
         -floop-parallelize-all \
         -floop-block \
         -ftree-parallelize-loops=2 \
@@ -89,7 +86,7 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
 bootimage: kernel modules wl12xx
@@ -117,7 +114,6 @@ kernel:
 modules:
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
-	# Keeping external modules flags on the safe side
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
 
 .PHONY: wl12xx
