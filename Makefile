@@ -47,6 +47,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -flto \
         -march=atom \
+        -mmmx \
+        -msse \
         -msse2 \
         -msse3 \
         -mssse3 \
@@ -59,10 +61,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -finline-functions \
         -fpredictive-commoning \
         -fgcse-after-reload \
-        -fforce-addr \
-        -fsingle-precision-constant \
-        -floop-parallelize-all \
         -floop-block \
+        -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
@@ -86,7 +86,7 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
 bootimage: kernel modules wl12xx
