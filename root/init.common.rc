@@ -41,11 +41,16 @@ on boot
     chmod 0664 /sys/class/backlight/psb-bl/actual_brightness
 
     # Reduce backlight prior booting
-    write /sys/class/backlight/psb-bl/brightness 30
+    write /sys/class/backlight/psb-bl/brightness 20
 
     # SMP uses shared policies
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactivex
     write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor interactivex
+
+    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/affected_cpus
+    write 0 /sys/devices/system/cpu/cpu0/cpufreq/affected_cpus
+    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/affected_cpus
+    write 0 /sys/devices/system/cpu/cpu1/cpufreq/affected_cpus
 
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
     chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
@@ -71,9 +76,6 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
-    # The scheduler tries to schedule processes on the least number H-Threads
-    write /sys/devices/system/cpu/sched_smt_power_savings 1
-
     # Reducing write latencies, we got eMMC's + SD
     write /sys/block/mmcblk0/queue/nr_requests 8
     write /sys/block/mmcblk1/queue/nr_requests 256
@@ -82,7 +84,7 @@ on boot
     write /proc/sys/vm/dirty_expire_centisecs 3200
     write /proc/sys/vm/dirty_writeback_centisecs 800
     write /proc/sys/vm/dirty_ratio 90
-    write /proc/sys/vm/dirty_background_ratio 70
+    write /proc/sys/vm/dirty_background_ratio 80
     write /proc/sys/vm/vfs_cache_pressure 40
 
     # Enabling kernel same-page merging (KSM)

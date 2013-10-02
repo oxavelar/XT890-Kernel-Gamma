@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -89,13 +89,13 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
-bootimage: kernel modules wl12xx
+bootimage: kernel modules
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
 	# Copy the created modules to the ramdisk path and strip debug symbols
 	find $(MBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	find $(WL12XX_SRC_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
-	strip --strip-debug --strip-unneeded /tmp/smi-ramdisk/lib/modules/*.ko
+	strip --strip-unneeded /tmp/smi-ramdisk/lib/modules/*.ko
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
 	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
 	# Pack the boot.img
@@ -112,12 +112,11 @@ kernel:
 
 .PHONY: modules
 modules:
+	# General modules from the kernel
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
-
-.PHONY: wl12xx
-wl12xx: modules
+	# Wireless modules
 	cd $(WL12XX_SRC_PATH); scripts/driver-select wl12xx
 	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
 
