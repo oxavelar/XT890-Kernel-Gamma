@@ -123,13 +123,13 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	  'interactive' governor for latency-sensitive workloads.
 
 config CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
-	bool "interactiveX"
+	bool "interactivex"
 	select CPU_FREQ_GOV_INTERACTIVEX
 	help
 	  Use the CPUFreq governor 'interactiveX' as default. This allows
 	  you to get a full dynamic cpu frequency capable system by simply
 	  loading your cpufreq low-level hardware driver, using the
-	  'interactiveX' governor for latency-sensitive workloads.
+	  'interactivex' governor for latency-sensitive workloads.
 
 endchoice
 
@@ -206,7 +206,7 @@ config CPU_FREQ_GOV_INTERACTIVE
 	  designed for latency-sensitive workloads.
 
 config CPU_FREQ_GOV_INTERACTIVEX
-	tristate "'interactiveX' cpufreq policy governor"
+	tristate "'interactivex' cpufreq policy governor"
 	help
 	  'interactiveX' - Modified version of interactive with sleep+wake code.
 
