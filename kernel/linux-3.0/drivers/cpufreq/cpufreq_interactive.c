@@ -123,12 +123,11 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 * Because of this, whitelist specific known (series) of CPUs by default, and
 * leave all others up to the user.
 */
-/*#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
+#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
 static bool io_is_busy = 1;
 #else
 static bool io_is_busy = 0;
-#endif*/
-static bool io_is_busy = 0;
+#endif
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);

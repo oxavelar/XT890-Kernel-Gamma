@@ -78,7 +78,7 @@ static unsigned int hispeed_freq = 1600000;
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 80
+#define DEFAULT_TARGET_LOAD 90
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -100,7 +100,7 @@ static unsigned long timer_rate = DEFAULT_TIMER_RATE;
  * Wait this long before raising speed above hispeed, by default a single
  * timer interval.
  */
-#define DEFAULT_ABOVE_HISPEED_DELAY (4 * DEFAULT_TIMER_RATE)
+#define DEFAULT_ABOVE_HISPEED_DELAY (8 * DEFAULT_TIMER_RATE)
 static unsigned int default_above_hispeed_delay[] = {
 	DEFAULT_ABOVE_HISPEED_DELAY };
 static spinlock_t above_hispeed_delay_lock;
@@ -130,12 +130,11 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 * Because of this, whitelist specific known (series) of CPUs by default, and
 * leave all others up to the user.
 */
-/*#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
+#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
 static bool io_is_busy = 1;
 #else
 static bool io_is_busy = 0;
-#endif*/
-static bool io_is_busy = 0;
+#endif
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
