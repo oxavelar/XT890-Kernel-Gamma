@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -57,7 +57,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -msahf \
         -mmovbe \
         -ftree-vectorize \
-        -fomit-frame-pointer \
         -fpredictive-commoning \
         -fgcse-after-reload \
         -floop-block \
@@ -82,12 +81,13 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4"
 
 .PHONY: bootimage
 bootimage: kernel modules
 	rm -fR /tmp/smi-ramdisk
 	cp -R $(PWD)/root /tmp/smi-ramdisk
+	mkdir -p /tmp/smi-ramdisk/lib/modules
 	# Copy the created modules to the ramdisk path and strip debug symbols
 	find $(MBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	find $(WL12XX_SRC_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
