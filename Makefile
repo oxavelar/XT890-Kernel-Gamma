@@ -64,12 +64,12 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
+        -foptimize-register-move \
+        -fmodulo-sched \
+        -fmodulo-sched-allow-regmoves \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
         --param l2-cache-size=512 \
-
-export LDFLAGS := -Wl,-O1
-export LDFLAGS_MODULE := $(LDFLAGS)
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
