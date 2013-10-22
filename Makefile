@@ -22,7 +22,7 @@
 ############################################################################
 
 export ARCH := i386
-export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 export KBUILD_VERBOSE := 0
 
 ############################################################################
@@ -114,7 +114,7 @@ modules:
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
 	# Wireless modules
 	cd $(WL12XX_SRC_PATH); scripts/driver-select wl12xx
-	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
+	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS="-O2"
 
 .PHONY: clean
 clean:

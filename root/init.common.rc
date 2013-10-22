@@ -89,7 +89,7 @@ on boot
 
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
-    write /sys/kernel/mm/ksm/pages_to_scan 2048
+    write /sys/kernel/mm/ksm/pages_to_scan 4096
     write /sys/kernel/mm/ksm/sleep_millisecs 4000
 
     # Default Read Ahead value for sdcard devices
