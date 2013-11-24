@@ -91,7 +91,7 @@ bootimage: kernel modules
 	# Copy the created modules to the ramdisk path and strip debug symbols
 	find $(MBUILD_OUT_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
 	find $(WL12XX_SRC_PATH) -iname *.ko -exec cp -f \{\} /tmp/smi-ramdisk/lib/modules/ \;
-	strip --strip-unneeded /tmp/smi-ramdisk/lib/modules/*.ko
+	strip --strip-debug --strip-unneeded /tmp/smi-ramdisk/lib/modules/*.ko
 	$(PWD)/tools/pack-ramdisk /tmp/smi-ramdisk
 	mv /tmp/ramdisk.cpio.gz $(OUT_PATH)/ramdisk.cpio.gz
 	# Pack the boot.img
@@ -114,7 +114,7 @@ modules:
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
 	# Wireless modules
 	cd $(WL12XX_SRC_PATH); scripts/driver-select wl12xx
-	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS="-O2"
+	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
 
 .PHONY: clean
 clean:
