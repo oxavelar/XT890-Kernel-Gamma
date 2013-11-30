@@ -87,9 +87,9 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 3200
     write /proc/sys/vm/dirty_writeback_centisecs 800
-    write /proc/sys/vm/dirty_ratio 80
-    write /proc/sys/vm/dirty_background_ratio 70
-    write /proc/sys/vm/vfs_cache_pressure 20
+    write /proc/sys/vm/dirty_ratio 90
+    write /proc/sys/vm/dirty_background_ratio 80
+    write /proc/sys/vm/vfs_cache_pressure 10
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
@@ -114,8 +114,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk0/queue/iosched/slice_idle 0
     write /sys/block/mmcblk1/queue/iosched/slice_idle 0
-    write /sys/block/mmcblk0/queue/iosched/quantum 20
-    write /sys/block/mmcblk1/queue/iosched/quantum 20
+    write /sys/block/mmcblk0/queue/iosched/quantum 48
+    write /sys/block/mmcblk1/queue/iosched/quantum 48
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576
