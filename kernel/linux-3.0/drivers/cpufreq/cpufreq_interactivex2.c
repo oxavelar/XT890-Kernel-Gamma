@@ -65,7 +65,6 @@ static struct task_struct *speedchange_task;
 static cpumask_t speedchange_cpumask;
 
 /* Used for suspend code */
-static unsigned int registration = 0;
 static unsigned int enabled = 0;
 
 static spinlock_t speedchange_cpumask_lock;
@@ -202,32 +201,6 @@ static void cpufreq_interactive_timer_resched(
 	pcpu->time_in_idle =
 		get_cpu_idle_time(smp_processor_id(),
 				     &pcpu->time_in_idle_timestamp);
-	pcpu->cputime_speedadj = 0;
-	pcpu->cputime_speedadj_timestamp = pcpu->time_in_idle_timestamp;
-	spin_unlock_irqrestore(&pcpu->load_lock, flags);
-}
-
-/* The caller shall take enable_sem write semaphore to avoid any timer race.
- * The cpu_timer and cpu_slack_timer must be deactivated when calling this
- * function.
- */
-static void cpufreq_interactive_timer_start(int cpu)
-{
-	struct cpufreq_interactive_cpuinfo *pcpu = &per_cpu(cpuinfo, cpu);
-	unsigned long expires = jiffies + usecs_to_jiffies(timer_rate);
-	unsigned long flags;
-
-	pcpu->cpu_timer.expires = expires;
-	add_timer_on(&pcpu->cpu_timer, cpu);
-	if (timer_slack_val >= 0 && pcpu->target_freq > pcpu->policy->min) {
-		expires += usecs_to_jiffies(timer_slack_val);
-		pcpu->cpu_slack_timer.expires = expires;
-		add_timer_on(&pcpu->cpu_slack_timer, cpu);
-	}
-
-	spin_lock_irqsave(&pcpu->load_lock, flags);
-	pcpu->time_in_idle =
-		get_cpu_idle_time(smp_processor_id(), &pcpu->time_in_idle_timestamp);
 	pcpu->cputime_speedadj = 0;
 	pcpu->cputime_speedadj_timestamp = pcpu->time_in_idle_timestamp;
 	spin_unlock_irqrestore(&pcpu->load_lock, flags);
@@ -1125,7 +1098,14 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			pcpu->hispeed_validate_time =
 				pcpu->floor_validate_time;
 			down_write(&pcpu->enable_sem);
-			cpufreq_interactive_timer_start(j);
+			expires = jiffies + usecs_to_jiffies(timer_rate);
+			pcpu->cpu_timer.expires = expires;
+			add_timer_on(&pcpu->cpu_timer, j);
+			if (timer_slack_val >= 0) {
+				expires += usecs_to_jiffies(timer_slack_val);
+				pcpu->cpu_slack_timer.expires = expires;
+				add_timer_on(&pcpu->cpu_slack_timer, j);
+			}
 			pcpu->governor_enabled = 1;
 			up_write(&pcpu->enable_sem);
 		}
@@ -1251,6 +1231,6 @@ static void __exit cpufreq_interactive_exit(void)
 module_exit(cpufreq_interactive_exit);
 
 MODULE_AUTHOR("Mike Chan <mike@android.com>");
-MODULE_DESCRIPTION("'cpufreq_interactivex' - A cpufreq governor for "
+MODULE_DESCRIPTION("'cpufreq_interactivex2' - A cpufreq governor for "
 	"Latency sensitive workloads");
 MODULE_LICENSE("GPL");
