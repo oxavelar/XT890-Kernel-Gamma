@@ -627,23 +627,12 @@ static void cpufreq_interactive_boost(void)
 		wake_up_process(speedchange_task);
 }
 
-static void interactive_suspend(int suspend)
-{
-	if (!enabled) return;
-	
-	/* Actual hotplugging events */
-	if (suspend)
-		disable_nonboot_cpus();
-	else
-		enable_nonboot_cpus();
-}
-
 static void interactive_early_suspend(struct early_suspend *handler) {
-	interactive_suspend(1);
+	disable_nonboot_cpus();
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	interactive_suspend(0);
+	enable_nonboot_cpus();
 }
 
 static struct early_suspend interactive_power_suspend = {
@@ -1131,7 +1120,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		mutex_unlock(&gov_lock);
 
 		register_early_suspend(&interactive_power_suspend);
-		enabled = 1;
 		pr_info("interactivex2 start\n");
 		break;
 
@@ -1156,7 +1144,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		idle_notifier_unregister(&cpufreq_interactive_idle_nb);
 		mutex_unlock(&gov_lock);
 
-		enabled = 0;
 		unregister_early_suspend(&interactive_power_suspend);
 		pr_info("interactivex2 inactive\n");
 
@@ -1224,6 +1211,7 @@ module_init(cpufreq_interactive_init);
 static void __exit cpufreq_interactive_exit(void)
 {
 	cpufreq_unregister_governor(&cpufreq_gov_interactivex2);
+	enable_nonboot_cpus();
 	kthread_stop(speedchange_task);
 	put_task_struct(speedchange_task);
 }
