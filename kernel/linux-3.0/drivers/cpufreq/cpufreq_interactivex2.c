@@ -63,10 +63,6 @@ static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
 /* realtime thread handles frequency scaling */
 static struct task_struct *speedchange_task;
 static cpumask_t speedchange_cpumask;
-
-/* Used for suspend code */
-static unsigned int enabled = 0;
-
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
 
@@ -1120,7 +1116,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		mutex_unlock(&gov_lock);
 
 		register_early_suspend(&interactive_power_suspend);
-		pr_info("interactivex2 start\n");
+		pr_info("interactivex2 registered\n");
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -1145,7 +1141,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		mutex_unlock(&gov_lock);
 
 		unregister_early_suspend(&interactive_power_suspend);
-		pr_info("interactivex2 inactive\n");
+		pr_info("interactivex2 unregistered\n");
 
 		break;
 
