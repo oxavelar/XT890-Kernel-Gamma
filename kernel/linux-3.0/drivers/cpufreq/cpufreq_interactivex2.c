@@ -65,12 +65,13 @@ static struct task_struct *speedchange_task;
 static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
+static struct mutex hotplug_lock;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = 1600000;
+static unsigned int hispeed_freq = 1800000;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 98
+#define DEFAULT_GO_HISPEED_LOAD 99
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
@@ -624,7 +625,16 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	disable_nonboot_cpus();
+	if (num_online_cpus() == num_present_cpus()) {
+		/*
+		 * Disabling the CPU's needs to be thread safe in
+		 * order to work when cpufreq_interactivex2 registers
+		 * on multiple processors.
+		*/
+		mutex_lock(&hotplug_lock);
+		disable_nonboot_cpus();
+		mutex_unlock(&hotplug_lock);
+	}
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
@@ -1183,6 +1193,7 @@ static int __init cpufreq_interactive_init(void)
 	spin_lock_init(&speedchange_cpumask_lock);
 	spin_lock_init(&above_hispeed_delay_lock);
 	mutex_init(&gov_lock);
+	mutex_init(&hotplug_lock);
 	speedchange_task =
 		kthread_create(cpufreq_interactive_speedchange_task, NULL,
 			       "cfinteractive");
