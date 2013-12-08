@@ -68,7 +68,7 @@ static struct mutex gov_lock;
 static struct mutex hotplug_lock;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = 1800000;
+static unsigned int hispeed_freq = 1600000;
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 99
@@ -115,7 +115,7 @@ static u64 boostpulse_endtime;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
+#define DEFAULT_TIMER_SLACK -1
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 /*
@@ -625,20 +625,33 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	if (num_online_cpus() == num_present_cpus()) {
+	mutex_lock(&hotplug_lock);
+	smp_mb();
+	if (num_online_cpus() > 1) {
 		/*
 		 * Disabling the CPU's needs to be thread safe in
 		 * order to work when cpufreq_interactivex2 registers
 		 * on multiple processors.
 		*/
-		mutex_lock(&hotplug_lock);
+		enable_nonboot_cpus();
 		disable_nonboot_cpus();
-		mutex_unlock(&hotplug_lock);
 	}
+	mutex_unlock(&hotplug_lock);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	enable_nonboot_cpus();
+	mutex_lock(&hotplug_lock);
+	smp_mb();
+	if (num_online_cpus() < 2) {
+		/*
+		 * Enabling the CPU's needs to be thread safe in
+		 * order to work when cpufreq_interactivex2 registers
+		 * on multiple processors.
+		*/
+		smp_mb();
+		enable_nonboot_cpus();
+	}
+	mutex_unlock(&hotplug_lock);
 }
 
 static struct early_suspend interactive_power_suspend = {
