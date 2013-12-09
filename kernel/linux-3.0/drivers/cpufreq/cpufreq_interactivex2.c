@@ -626,31 +626,34 @@ static void cpufreq_interactive_boost(void)
 
 static void interactive_early_suspend(struct early_suspend *handler) {
 	mutex_lock(&hotplug_lock);
-	smp_mb();
+	cpu_maps_update_begin();
+	/*
+	 * Disabling the CPU's needs to be thread safe in
+	 * order to work when cpufreq_interactivex2 registers
+	 * on multiple processors.
+	*/
 	if (num_online_cpus() > 1) {
-		/*
-		 * Disabling the CPU's needs to be thread safe in
-		 * order to work when cpufreq_interactivex2 registers
-		 * on multiple processors.
-		*/
-		enable_nonboot_cpus();
+		//enable_nonboot_cpus();
+		cpu_maps_update_done();
 		disable_nonboot_cpus();
 	}
+	cpu_maps_update_done();
 	mutex_unlock(&hotplug_lock);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
 	mutex_lock(&hotplug_lock);
-	smp_mb();
-	if (num_online_cpus() < 2) {
-		/*
-		 * Enabling the CPU's needs to be thread safe in
-		 * order to work when cpufreq_interactivex2 registers
-		 * on multiple processors.
-		*/
-		smp_mb();
+	cpu_maps_update_begin();
+	/*
+	 * Enabling the CPU's needs to be thread safe in
+	 * order to work when cpufreq_interactivex2 registers
+	 * on multiple processors.
+	*/
+	if (num_online_cpus() == 1) {
+		cpu_maps_update_done();
 		enable_nonboot_cpus();
 	}
+	cpu_maps_update_done();
 	mutex_unlock(&hotplug_lock);
 }
 
