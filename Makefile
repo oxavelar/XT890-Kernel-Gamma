@@ -43,12 +43,10 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -O3 \
+        -O2 \
         -pipe \
         -flto \
         -march=atom \
-        -mmmx \
-        -msse \
         -msse2 \
         -msse3 \
         -mssse3 \
@@ -58,7 +56,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mmovbe \
         -ftree-vectorize \
         -fpredictive-commoning \
-        -fgcse-after-reload \
         -floop-block \
         -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
@@ -111,10 +108,10 @@ modules:
 	# General modules from the kernel
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto -fno-tree-vectorize" modules
 	# Wireless modules
 	cd $(WL12XX_SRC_PATH); scripts/driver-select wl12xx
-	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto"
+	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto -fno-tree-vectorize"
 
 .PHONY: clean
 clean:
