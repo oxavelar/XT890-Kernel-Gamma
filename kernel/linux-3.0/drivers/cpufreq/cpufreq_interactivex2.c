@@ -55,6 +55,7 @@ struct cpufreq_interactive_cpuinfo {
 	u64 floor_validate_time;
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
+	struct rw_semaphore hotplug_sem;
 	int governor_enabled;
 };
 
@@ -627,7 +628,7 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 	struct cpufreq_interactive_cpuinfo *pcpu =
 		&per_cpu(cpuinfo, smp_processor_id());
 
-	if (!down_write_trylock(&pcpu->enable_sem))
+	if (!down_write_trylock(&pcpu->hotplug_sem))
 		return;
 
 	/*
@@ -635,18 +636,17 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 	 * order to work when cpufreq_interactivex2 registers
 	 * on multiple processors.
 	*/
-	if (num_online_cpus() > 1) {
-		//enable_nonboot_cpus();
+	if (num_online_cpus() > 1)
 		disable_nonboot_cpus();
-	}
-	up_write(&pcpu->enable_sem);
+
+	up_write(&pcpu->hotplug_sem);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
 	struct cpufreq_interactive_cpuinfo *pcpu =
 		&per_cpu(cpuinfo, smp_processor_id());
 
-	if (!down_write_trylock(&pcpu->enable_sem))
+	if (!down_write_trylock(&pcpu->hotplug_sem))
 		return;
 
 	/*
@@ -654,10 +654,10 @@ static void interactive_late_resume(struct early_suspend *handler) {
 	 * order to work when cpufreq_interactivex2 registers
 	 * on multiple processors.
 	*/
-	if (num_online_cpus() == 1) {
+	if (num_online_cpus() == 1)
 		enable_nonboot_cpus();
-	}
-	up_write(&pcpu->enable_sem);
+
+	up_write(&pcpu->hotplug_sem);
 }
 
 static struct early_suspend interactive_power_suspend = {
