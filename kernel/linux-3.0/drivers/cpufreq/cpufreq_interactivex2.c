@@ -65,7 +65,6 @@ static struct task_struct *speedchange_task;
 static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
-static struct mutex hotplug_lock;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
 static unsigned int hispeed_freq = 1600000;
@@ -625,9 +624,12 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	cpu_maps_update_begin();
-	mutex_lock(&hotplug_lock);
-	cpu_maps_update_done();
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, smp_processor_id());
+
+	if (!down_write_trylock(&pcpu->enable_sem))
+		return;
+
 	/*
 	 * Disabling the CPU's needs to be thread safe in
 	 * order to work when cpufreq_interactivex2 registers
@@ -637,13 +639,16 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 		//enable_nonboot_cpus();
 		disable_nonboot_cpus();
 	}
-	mutex_unlock(&hotplug_lock);
+	up_write(&pcpu->enable_sem);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	cpu_maps_update_begin();
-	mutex_lock(&hotplug_lock);
-	cpu_maps_update_done();
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, smp_processor_id());
+
+	if (!down_write_trylock(&pcpu->enable_sem))
+		return;
+
 	/*
 	 * Enabling the CPU's needs to be thread safe in
 	 * order to work when cpufreq_interactivex2 registers
@@ -652,7 +657,7 @@ static void interactive_late_resume(struct early_suspend *handler) {
 	if (num_online_cpus() == 1) {
 		enable_nonboot_cpus();
 	}
-	mutex_unlock(&hotplug_lock);
+	up_write(&pcpu->enable_sem);
 }
 
 static struct early_suspend interactive_power_suspend = {
@@ -1207,7 +1212,6 @@ static int __init cpufreq_interactive_init(void)
 	spin_lock_init(&speedchange_cpumask_lock);
 	spin_lock_init(&above_hispeed_delay_lock);
 	mutex_init(&gov_lock);
-	mutex_init(&hotplug_lock);
 	speedchange_task =
 		kthread_create(cpufreq_interactive_speedchange_task, NULL,
 			       "cfinteractive");
@@ -1232,7 +1236,6 @@ module_init(cpufreq_interactive_init);
 static void __exit cpufreq_interactive_exit(void)
 {
 	cpufreq_unregister_governor(&cpufreq_gov_interactivex2);
-	enable_nonboot_cpus();
 	kthread_stop(speedchange_task);
 	put_task_struct(speedchange_task);
 }
