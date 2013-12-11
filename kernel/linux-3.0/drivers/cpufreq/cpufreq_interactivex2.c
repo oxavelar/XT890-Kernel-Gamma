@@ -133,6 +133,8 @@ static bool io_is_busy = 1;
 static bool io_is_busy = 0;
 #endif
 
+/* CPU Hotplugging support on early suspend */
+static bool cpus_disabled = false;
 static spinlock_t cpu_hotplug_lock;
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
@@ -629,7 +631,7 @@ static void cpufreq_interactive_boost(void)
 static void interactive_early_suspend(struct early_suspend *handler) {
 	unsigned long flags;
 
-	if (num_online_cpus() > 1) {
+	if (num_online_cpus() > 1 && !cpus_disabled) {
 		spin_lock_irqsave(&cpu_hotplug_lock, flags);
 		/*
 		 * Disabling the CPU's needs to be thread safe in
@@ -637,6 +639,7 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 		 * on multiple processors.
 		 */
 		disable_nonboot_cpus();
+		cpus_disabled = true;
 		spin_unlock_irqrestore(&cpu_hotplug_lock, flags);
 	}
 }
@@ -644,7 +647,7 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 static void interactive_late_resume(struct early_suspend *handler) {
 	unsigned long flags;
 
-	if (num_online_cpus() == 1) {
+	if (num_online_cpus() == 1 && cpus_disabled) {
 		spin_lock_irqsave(&cpu_hotplug_lock, flags);
 		/*
 		 * Enabling the CPU's needs to be thread safe in
@@ -652,6 +655,7 @@ static void interactive_late_resume(struct early_suspend *handler) {
 		 * on multiple processors.
 		 */
 		enable_nonboot_cpus();
+		cpus_disabled = false;
 		spin_unlock_irqrestore(&cpu_hotplug_lock, flags);
 	}
 }
@@ -1207,7 +1211,6 @@ static int __init cpufreq_interactive_init(void)
 	spin_lock_init(&target_loads_lock);
 	spin_lock_init(&speedchange_cpumask_lock);
 	spin_lock_init(&above_hispeed_delay_lock);
-	spin_lock_init(&cpu_hotplug_lock);
 	mutex_init(&gov_lock);
 	speedchange_task =
 		kthread_create(cpufreq_interactive_speedchange_task, NULL,
