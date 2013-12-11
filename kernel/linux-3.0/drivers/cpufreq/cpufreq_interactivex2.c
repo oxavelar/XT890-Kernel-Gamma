@@ -133,6 +133,8 @@ static bool io_is_busy = 1;
 static bool io_is_busy = 0;
 #endif
 
+static spinlock_t cpu_hotplug_lock;
+
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
 
@@ -625,39 +627,33 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+	unsigned long flags;
 
-	if (!down_write_trylock(&pcpu->hotplug_sem))
-		return;
-
-	/*
-	 * Disabling the CPU's needs to be thread safe in
-	 * order to work when cpufreq_interactivex2 registers
-	 * on multiple processors.
-	*/
-	if (num_online_cpus() > 1)
+	if (num_online_cpus() > 1) {
+		spin_lock_irqsave(&cpu_hotplug_lock, flags);
+		/*
+		 * Disabling the CPU's needs to be thread safe in
+		 * order to work when cpufreq_interactivex2 registers
+		 * on multiple processors.
+		 */
 		disable_nonboot_cpus();
-
-	up_write(&pcpu->hotplug_sem);
+		spin_unlock_irqrestore(&cpu_hotplug_lock, flags);
+	}
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+	unsigned long flags;
 
-	if (!down_write_trylock(&pcpu->hotplug_sem))
-		return;
-
-	/*
-	 * Enabling the CPU's needs to be thread safe in
-	 * order to work when cpufreq_interactivex2 registers
-	 * on multiple processors.
-	*/
-	if (num_online_cpus() == 1)
+	if (num_online_cpus() == 1) {
+		spin_lock_irqsave(&cpu_hotplug_lock, flags);
+		/*
+		 * Enabling the CPU's needs to be thread safe in
+		 * order to work when cpufreq_interactivex2 registers
+		 * on multiple processors.
+		 */
 		enable_nonboot_cpus();
-
-	up_write(&pcpu->hotplug_sem);
+		spin_unlock_irqrestore(&cpu_hotplug_lock, flags);
+	}
 }
 
 static struct early_suspend interactive_power_suspend = {
@@ -1211,6 +1207,7 @@ static int __init cpufreq_interactive_init(void)
 	spin_lock_init(&target_loads_lock);
 	spin_lock_init(&speedchange_cpumask_lock);
 	spin_lock_init(&above_hispeed_delay_lock);
+	spin_lock_init(&cpu_hotplug_lock);
 	mutex_init(&gov_lock);
 	speedchange_task =
 		kthread_create(cpufreq_interactive_speedchange_task, NULL,
