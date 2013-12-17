@@ -43,7 +43,7 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -O2 \
+        -Os \
         -pipe \
         -flto \
         -march=atom \
@@ -57,7 +57,12 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -ftree-vectorize \
         -fpredictive-commoning \
         -floop-block \
+        --param loop-block-tile-size=512 \
+        -floop-interchange \
+        -floop-strip-mine \
+        -fgraphite-identity \
         -floop-parallelize-all \
+        -ftree-loop-im \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
