@@ -89,7 +89,7 @@ on boot
     write /proc/sys/vm/dirty_writeback_centisecs 800
     write /proc/sys/vm/dirty_ratio 99
     write /proc/sys/vm/dirty_background_ratio 99
-    write /proc/sys/vm/vfs_cache_pressure 50
+    write /proc/sys/vm/vfs_cache_pressure 40
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 

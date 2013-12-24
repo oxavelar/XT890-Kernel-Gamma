@@ -133,10 +133,6 @@ static bool io_is_busy = 1;
 static bool io_is_busy = 0;
 #endif
 
-/* CPU Hotplugging support on early suspend */
-static bool suspended = false;
-static spinlock_t cpu_hotplug_lock;
-
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
 
@@ -629,40 +625,47 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	if (!suspended) {
-		unsigned long flags;
-		spin_lock_irqsave(&cpu_hotplug_lock, flags);
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, smp_processor_id());
+
+//	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
+	down_write(&pcpu->hotplug_sem);
+
+	if (num_online_cpus() == num_present_cpus()) {
 		/*
 		 * Disabling the CPU's needs to be thread safe in
 		 * order to work when cpufreq_interactivex2 registers
 		 * on multiple processors.
 		 */
-		suspended = true;
-		//enable_nonboot_cpus();
 		disable_nonboot_cpus();
-		spin_unlock_irqrestore(&cpu_hotplug_lock, flags);
 	}
+
+	up_write(&pcpu->hotplug_sem);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	if (suspended) {
-		unsigned long flags;
-		spin_lock_irqsave(&cpu_hotplug_lock, flags);
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, smp_processor_id());
+
+//	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
+	down_write(&pcpu->hotplug_sem);
+
+	if (num_online_cpus() < num_present_cpus()) {
 		/*
 		 * Enabling the CPU's needs to be thread safe in
 		 * order to work when cpufreq_interactivex2 registers
 		 * on multiple processors.
 		 */
-		suspended = false;
 		enable_nonboot_cpus();
-		spin_unlock_irqrestore(&cpu_hotplug_lock, flags);
 	}
+
+	up_write(&pcpu->hotplug_sem);
 }
 
 static struct early_suspend interactive_power_suspend = {
         .suspend = interactive_early_suspend,
         .resume = interactive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
+        .level = EARLY_SUSPEND_LEVEL_STOP_DRAWING,
 };
 
 static int cpufreq_interactive_notifier(
