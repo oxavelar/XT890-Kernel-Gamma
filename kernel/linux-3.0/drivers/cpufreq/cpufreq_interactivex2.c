@@ -55,7 +55,6 @@ struct cpufreq_interactive_cpuinfo {
 	u64 floor_validate_time;
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
-	struct rw_semaphore hotplug_sem;
 	int governor_enabled;
 };
 
@@ -66,6 +65,7 @@ static struct task_struct *speedchange_task;
 static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
+static struct mutex hotplug_lock;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
 static unsigned int hispeed_freq = 1600000;
@@ -625,12 +625,9 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
 
-//	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
-	down_write(&pcpu->hotplug_sem);
-
+	mutex_lock(&hotplug_lock);
+	get_online_cpus();
 	if (num_online_cpus() == num_present_cpus()) {
 		/*
 		 * Disabling the CPU's needs to be thread safe in
@@ -639,17 +636,14 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 		 */
 		disable_nonboot_cpus();
 	}
-
-	up_write(&pcpu->hotplug_sem);
+	put_online_cpus();
+	mutex_unlock(&hotplug_lock);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
 
-//	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
-	down_write(&pcpu->hotplug_sem);
-
+	mutex_lock(&hotplug_lock);
+	get_online_cpus();
 	if (num_online_cpus() < num_present_cpus()) {
 		/*
 		 * Enabling the CPU's needs to be thread safe in
@@ -658,8 +652,8 @@ static void interactive_late_resume(struct early_suspend *handler) {
 		 */
 		enable_nonboot_cpus();
 	}
-
-	up_write(&pcpu->hotplug_sem);
+	put_online_cpus();
+	mutex_unlock(&hotplug_lock);
 }
 
 static struct early_suspend interactive_power_suspend = {
