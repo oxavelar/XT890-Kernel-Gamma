@@ -43,7 +43,7 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
-        -Os \
+        -O2 \
         -pipe \
         -flto \
         -march=atom \
