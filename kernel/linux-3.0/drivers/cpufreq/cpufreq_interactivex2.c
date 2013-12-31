@@ -636,9 +636,8 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 		 * on multiple processors.
 		 * Note: Voluntary preemption might hang the code.
 		 */
-		//get_online_cpus();
 		disable_nonboot_cpus();
-		//put_online_cpus();
+		get_online_cpus();
 	}
 
 	up_write(&pcpu->hotplug_sem);
@@ -656,9 +655,8 @@ static void interactive_late_resume(struct early_suspend *handler) {
 		 * on multiple processors.
 		 * Note: Voluntary preemption might hang the code.
 		 */
-		//get_online_cpus();
+		put_online_cpus();
 		enable_nonboot_cpus();
-		//put_online_cpus();
 	}
 
 	up_write(&pcpu->hotplug_sem);
@@ -667,7 +665,7 @@ static void interactive_late_resume(struct early_suspend *handler) {
 static struct early_suspend interactive_power_suspend = {
         .suspend = interactive_early_suspend,
         .resume = interactive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_STOP_DRAWING,
+        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB,
 };
 
 static int cpufreq_interactive_notifier(
@@ -1173,6 +1171,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		idle_notifier_unregister(&cpufreq_interactive_idle_nb);
 		mutex_unlock(&gov_lock);
 
+		enable_nonboot_cpus();
 		unregister_early_suspend(&interactive_power_suspend);
 		pr_info("interactivex2 unregistered\n");
 
