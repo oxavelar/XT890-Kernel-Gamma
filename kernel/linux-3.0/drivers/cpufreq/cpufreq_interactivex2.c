@@ -55,7 +55,7 @@ struct cpufreq_interactive_cpuinfo {
 	u64 floor_validate_time;
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
-	struct rw_semaphore hotplug_sem;
+	struct mutex hotplug_lock;
 	int governor_enabled;
 };
 
@@ -625,10 +625,12 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
-	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
+	int first_cpu = cpumask_first(cpu_online_mask);
 
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, first_cpu);
+
+	mutex_lock(&pcpu->hotplug_lock);
 	if (num_online_cpus() == num_present_cpus()) {
 		/*
 		 * Disabling the CPU's needs to be thread safe in
@@ -636,18 +638,19 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 		 * on multiple processors.
 		 * Note: Voluntary preemption might hang the code.
 		 */
+		//put_online_cpus();
 		disable_nonboot_cpus();
-		get_online_cpus();
 	}
-
-	up_write(&pcpu->hotplug_sem);
+	mutex_unlock(&pcpu->hotplug_lock);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
-	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
+	int first_cpu = cpumask_first(cpu_online_mask);
 
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, first_cpu);
+
+	mutex_lock(&pcpu->hotplug_lock);
 	if (num_online_cpus() < num_present_cpus()) {
 		/*
 		 * Enabling the CPU's needs to be thread safe in
@@ -655,11 +658,9 @@ static void interactive_late_resume(struct early_suspend *handler) {
 		 * on multiple processors.
 		 * Note: Voluntary preemption might hang the code.
 		 */
-		put_online_cpus();
 		enable_nonboot_cpus();
 	}
-
-	up_write(&pcpu->hotplug_sem);
+	mutex_unlock(&pcpu->hotplug_lock);
 }
 
 static struct early_suspend interactive_power_suspend = {
@@ -1209,7 +1210,7 @@ static int __init cpufreq_interactive_init(void)
 		pcpu->cpu_slack_timer.function = cpufreq_interactive_nop_timer;
 		spin_lock_init(&pcpu->load_lock);
 		init_rwsem(&pcpu->enable_sem);
-		init_rwsem(&pcpu->hotplug_sem);
+		mutex_init(&pcpu->hotplug_lock);
 	}
 
 	spin_lock_init(&target_loads_lock);
