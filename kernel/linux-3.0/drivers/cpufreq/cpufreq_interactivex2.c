@@ -624,13 +624,11 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	int first_cpu = cpumask_first(cpu_online_mask);
-
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, first_cpu);
+		&per_cpu(cpuinfo, smp_processor_id());
 
     /* Only proceed if first cpu is doing the call */
-    if (pcpu->policy->cpu != first_cpu) return;
+    if (pcpu->policy->cpu != cpumask_first(cpu_online_mask)) return;
 
 	if (num_online_cpus() == num_present_cpus()) {
 		/*
@@ -644,13 +642,11 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	int first_cpu = cpumask_first(cpu_online_mask);
-
 	struct cpufreq_interactive_cpuinfo *pcpu =
 		&per_cpu(cpuinfo, first_cpu);
 
     /* Only proceed if first cpu is doing the call */
-    if (pcpu->policy->cpu != first_cpu) return;
+    if (pcpu->policy->cpu != cpumask_first(cpu_online_mask)) return;
 
 	if (num_online_cpus() < num_present_cpus()) {
 		/*
