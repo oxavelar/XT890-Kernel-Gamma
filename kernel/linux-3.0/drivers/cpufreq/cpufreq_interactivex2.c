@@ -643,7 +643,7 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 
 static void interactive_late_resume(struct early_suspend *handler) {
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, first_cpu);
+		&per_cpu(cpuinfo, smp_processor_id());
 
     /* Only proceed if first cpu is doing the call */
     if (pcpu->policy->cpu != cpumask_first(cpu_online_mask)) return;
