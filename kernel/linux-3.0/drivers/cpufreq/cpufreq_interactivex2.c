@@ -628,17 +628,8 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 		&per_cpu(cpuinfo, smp_processor_id());
 
     /* Only proceed if first cpu is doing the call */
-    if (pcpu->policy->cpu != cpumask_first(cpu_online_mask)) return;
-
-	if (num_online_cpus() == num_present_cpus()) {
-		/*
-		 * Disabling the CPU's needs to be thread safe in
-		 * order to work when cpufreq_interactivex2 registers
-		 * on multiple processors.
-		 * Note: Voluntary preemption might hang the code.
-		 */
+    if (pcpu->policy->cpu == cpumask_first(cpu_online_mask))
 		disable_nonboot_cpus();
-	}
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
@@ -646,17 +637,8 @@ static void interactive_late_resume(struct early_suspend *handler) {
 		&per_cpu(cpuinfo, smp_processor_id());
 
     /* Only proceed if first cpu is doing the call */
-    if (pcpu->policy->cpu != cpumask_first(cpu_online_mask)) return;
-
-	if (num_online_cpus() < num_present_cpus()) {
-		/*
-		 * Enabling the CPU's needs to be thread safe in
-		 * order to work when cpufreq_interactivex2 registers
-		 * on multiple processors.
-		 * Note: Voluntary preemption might hang the code.
-		 */
+    if (pcpu->policy->cpu == cpumask_first(cpu_online_mask))
 		enable_nonboot_cpus();
-	}
 }
 
 static struct early_suspend interactive_power_suspend = {
