@@ -624,27 +624,24 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+	int first_cpu = cpumask_first(cpu_online_mask);
 
-    /* Only proceed if first cpu is doing the call */
-    if (pcpu->policy->cpu == cpumask_first(cpu_online_mask))
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, first_cpu);
+
+	/* Only proceed if first cpu is doing the call */
+	if (pcpu->policy->cpu == first_cpu)
 		disable_nonboot_cpus();
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
-
-    /* Only proceed if first cpu is doing the call */
-    if (pcpu->policy->cpu == cpumask_first(cpu_online_mask))
-		enable_nonboot_cpus();
+	enable_nonboot_cpus();
 }
 
 static struct early_suspend interactive_power_suspend = {
         .suspend = interactive_early_suspend,
         .resume = interactive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB,
+        .level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
 };
 
 static int cpufreq_interactive_notifier(
