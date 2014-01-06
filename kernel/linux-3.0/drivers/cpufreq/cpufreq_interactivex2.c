@@ -624,7 +624,10 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	static int boot_cpu = 0;
+	if (num_online_cpus() < num_present_cpus()) return;
+
+	int boot_cpu;
+	boot_cpu = cpumask_first(cpu_online_mask);
 
 	struct cpufreq_interactive_cpuinfo *pcpu =
 		&per_cpu(cpuinfo, boot_cpu);
@@ -635,7 +638,10 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	static int boot_cpu = 0;
+	if (num_online_cpus() == num_present_cpus()) return;
+
+	int boot_cpu;
+	boot_cpu = cpumask_first(cpu_online_mask);
 
 	struct cpufreq_interactive_cpuinfo *pcpu =
 		&per_cpu(cpuinfo, boot_cpu);
