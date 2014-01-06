@@ -624,18 +624,25 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	int first_cpu = cpumask_first(cpu_online_mask);
+	static int boot_cpu = 0;
 
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, first_cpu);
+		&per_cpu(cpuinfo, boot_cpu);
 
 	/* Only proceed if first cpu is doing the call */
-	if (pcpu->policy->cpu == first_cpu)
+	if (pcpu->policy->cpu == boot_cpu)
 		disable_nonboot_cpus();
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	enable_nonboot_cpus();
+	static int boot_cpu = 0;
+
+	struct cpufreq_interactive_cpuinfo *pcpu =
+		&per_cpu(cpuinfo, boot_cpu);
+
+	/* Only proceed if first cpu is doing the call */
+	if (pcpu->policy->cpu == boot_cpu)
+		enable_nonboot_cpus();
 }
 
 static struct early_suspend interactive_power_suspend = {
@@ -1147,8 +1154,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		idle_notifier_unregister(&cpufreq_interactive_idle_nb);
 		mutex_unlock(&gov_lock);
 
-		enable_nonboot_cpus();
 		unregister_early_suspend(&interactive_power_suspend);
+		enable_nonboot_cpus();
 		pr_info("interactivex2 unregistered\n");
 
 		break;
