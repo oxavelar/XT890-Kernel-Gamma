@@ -42,10 +42,10 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 ############################################################################
 
 export ANDROID_TOOLCHAIN_FLAGS := \
-        -mno-android \
-        -O2 \
         -pipe \
         -flto \
+        -mno-android \
+        -O2 \
         -march=atom \
         -msse2 \
         -msse3 \

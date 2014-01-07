@@ -626,35 +626,35 @@ static void cpufreq_interactive_boost(void)
 static void interactive_early_suspend(struct early_suspend *handler) {
 	if (num_online_cpus() < num_present_cpus()) return;
 
-	int boot_cpu;
-	boot_cpu = cpumask_first(cpu_online_mask);
+	unsigned int first_cpu;
+	first_cpu = (unsigned int)cpumask_first(cpu_online_mask);
 
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, boot_cpu);
+	struct cpufreq_interactive_cpuinfo *pcpu;
+	pcpu = &per_cpu(cpuinfo, first_cpu);
 
 	/* Only proceed if first cpu is doing the call */
-	if (pcpu->policy->cpu == boot_cpu)
+	if (pcpu->policy->cpu == first_cpu)
 		disable_nonboot_cpus();
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
 	if (num_online_cpus() == num_present_cpus()) return;
 
-	int boot_cpu;
-	boot_cpu = cpumask_first(cpu_online_mask);
+	unsigned int first_cpu;
+	first_cpu = (unsigned int)cpumask_first(cpu_online_mask);
 
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, boot_cpu);
+	struct cpufreq_interactive_cpuinfo *pcpu;
+	pcpu = &per_cpu(cpuinfo, first_cpu);
 
 	/* Only proceed if first cpu is doing the call */
-	if (pcpu->policy->cpu == boot_cpu)
+	if (pcpu->policy->cpu == first_cpu)
 		enable_nonboot_cpus();
 }
 
 static struct early_suspend interactive_power_suspend = {
         .suspend = interactive_early_suspend,
         .resume = interactive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
+        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB,
 };
 
 static int cpufreq_interactive_notifier(
@@ -1161,7 +1161,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		mutex_unlock(&gov_lock);
 
 		unregister_early_suspend(&interactive_power_suspend);
-		enable_nonboot_cpus();
 		pr_info("interactivex2 unregistered\n");
 
 		break;
