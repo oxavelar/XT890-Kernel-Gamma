@@ -132,6 +132,9 @@ static bool io_is_busy = 1;
 static bool io_is_busy = 0;
 #endif
 
+/* Added for early suspend support */
+bool suspended;
+
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
 
@@ -624,7 +627,7 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	if (num_online_cpus() < num_present_cpus()) return;
+	if (suspended) return;
 
 	unsigned int first_cpu;
 	first_cpu = cpumask_first(cpu_online_mask);
@@ -634,10 +637,12 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 	pcpu = &get_cpu_var(cpuinfo);
 	if (pcpu->policy->cpu == first_cpu)
 		disable_nonboot_cpus();
+
+	suspended = true;
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	if (num_online_cpus() == num_present_cpus()) return;
+	if (!suspended) return;
 
 	unsigned int first_cpu;
 	first_cpu = cpumask_first(cpu_online_mask);
@@ -647,12 +652,14 @@ static void interactive_late_resume(struct early_suspend *handler) {
 	pcpu = &get_cpu_var(cpuinfo);
 	if (pcpu->policy->cpu == first_cpu)
 		enable_nonboot_cpus();
+
+	suspended = false;
 }
 
 static struct early_suspend interactive_power_suspend = {
         .suspend = interactive_early_suspend,
         .resume = interactive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB,
+        .level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
 };
 
 static int cpufreq_interactive_notifier(
