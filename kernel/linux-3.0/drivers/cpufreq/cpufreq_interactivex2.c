@@ -627,12 +627,11 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 	if (num_online_cpus() < num_present_cpus()) return;
 
 	unsigned int first_cpu;
-	first_cpu = (unsigned int)cpumask_first(cpu_online_mask);
-
-	struct cpufreq_interactive_cpuinfo *pcpu;
-	pcpu = &per_cpu(cpuinfo, first_cpu);
+	first_cpu = cpumask_first(cpu_online_mask);
 
 	/* Only proceed if first cpu is doing the call */
+	struct cpufreq_interactive_cpuinfo *pcpu;
+	pcpu = &get_cpu_var(cpuinfo);
 	if (pcpu->policy->cpu == first_cpu)
 		disable_nonboot_cpus();
 }
@@ -641,12 +640,11 @@ static void interactive_late_resume(struct early_suspend *handler) {
 	if (num_online_cpus() == num_present_cpus()) return;
 
 	unsigned int first_cpu;
-	first_cpu = (unsigned int)cpumask_first(cpu_online_mask);
-
-	struct cpufreq_interactive_cpuinfo *pcpu;
-	pcpu = &per_cpu(cpuinfo, first_cpu);
+	first_cpu = cpumask_first(cpu_online_mask);
 
 	/* Only proceed if first cpu is doing the call */
+	struct cpufreq_interactive_cpuinfo *pcpu;
+	pcpu = &get_cpu_var(cpuinfo);
 	if (pcpu->policy->cpu == first_cpu)
 		enable_nonboot_cpus();
 }
