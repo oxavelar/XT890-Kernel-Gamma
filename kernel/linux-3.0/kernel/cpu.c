@@ -424,7 +424,7 @@ int disable_nonboot_cpus(void)
 	if (!error) {
 		BUG_ON(num_online_cpus() > 1);
 		/* Make sure the CPUs won't be enabled by someone else */
-		cpu_hotplug_disabled = 1;
+		//cpu_hotplug_disabled = 1;
 	} else {
 		printk(KERN_ERR "Non-boot CPUs are not disabled\n");
 	}
