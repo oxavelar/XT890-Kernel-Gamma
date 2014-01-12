@@ -55,8 +55,8 @@ struct cpufreq_interactive_cpuinfo {
 	u64 floor_validate_time;
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
-	struct rw_semaphore hotplug_sem;
 	int governor_enabled;
+	spinlock_t suspend_lock;
 };
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
@@ -196,7 +196,7 @@ static void cpufreq_interactive_timer_resched(
 
 	spin_lock_irqsave(&pcpu->load_lock, flags);
 	pcpu->time_in_idle =
-		get_cpu_idle_time(smp_processor_id(),
+		get_cpu_idle_time(raw_smp_processor_id(),
 				     &pcpu->time_in_idle_timestamp);
 	pcpu->cputime_speedadj = 0;
 	pcpu->cputime_speedadj_timestamp = pcpu->time_in_idle_timestamp;
@@ -475,7 +475,7 @@ exit:
 static void cpufreq_interactive_idle_start(void)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+		&per_cpu(cpuinfo, raw_smp_processor_id());
 	int pending;
 
 	if (!down_read_trylock(&pcpu->enable_sem))
@@ -506,7 +506,7 @@ static void cpufreq_interactive_idle_start(void)
 static void cpufreq_interactive_idle_end(void)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+		&per_cpu(cpuinfo, raw_smp_processor_id());
 
 	if (!down_read_trylock(&pcpu->enable_sem))
 		return;
@@ -521,7 +521,7 @@ static void cpufreq_interactive_idle_end(void)
 	} else if (time_after_eq(jiffies, pcpu->cpu_timer.expires)) {
 		del_timer(&pcpu->cpu_timer);
 		del_timer(&pcpu->cpu_slack_timer);
-		cpufreq_interactive_timer(smp_processor_id());
+		cpufreq_interactive_timer(raw_smp_processor_id());
 	}
 
 	up_read(&pcpu->enable_sem);
@@ -625,45 +625,38 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	if (num_online_cpus() < num_present_cpus()) return;
-
-	unsigned int first_cpu;
+	unsigned int cpu, first_cpu;
 	struct cpufreq_interactive_cpuinfo *pcpu;
 
-	/* Only one thread can proceed */
-	first_cpu = cpumask_first(cpu_online_mask);
-	pcpu = &per_cpu(cpuinfo, first_cpu);
-	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
-
 	preempt_disable();
-	disable_nonboot_cpus();
-	preempt_enable();
+	if (num_online_cpus() < num_present_cpus()) return;
 
-	up_write(&pcpu->hotplug_sem);
+	/* Only let first cpu do the call */
+	first_cpu = cpumask_first(cpu_online_mask);
+	pcpu = &per_cpu(cpuinfo, raw_smp_processor_id());
+	if (pcpu->policy->cpu != first_cpu) return;
+
+	for_each_online_cpu(cpu)
+		if (cpu != first_cpu)
+			cpu_down(cpu);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	if (num_online_cpus() == num_present_cpus()) return;
-
-	unsigned int first_cpu;
-	struct cpufreq_interactive_cpuinfo *pcpu;
-
-	/* Only one thread can proceed */
+	unsigned int cpu, first_cpu;
 	first_cpu = cpumask_first(cpu_online_mask);
-	pcpu = &per_cpu(cpuinfo, first_cpu);
-	if (!down_write_trylock(&pcpu->hotplug_sem)) return;
 
 	preempt_disable();
-	enable_nonboot_cpus();
-	preempt_enable();
+	if (num_online_cpus() == num_present_cpus()) return;
 
-	up_write(&pcpu->hotplug_sem);
+	for_each_present_cpu(cpu)
+		if (cpu != first_cpu)
+			cpu_up(cpu);
 }
 
 static struct early_suspend interactive_power_suspend = {
-        .suspend = interactive_early_suspend,
-        .resume = interactive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
+		.suspend = interactive_early_suspend,
+		.resume = interactive_late_resume,
+		.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 };
 
 static int cpufreq_interactive_notifier(
@@ -1206,7 +1199,7 @@ static int __init cpufreq_interactive_init(void)
 		pcpu->cpu_slack_timer.function = cpufreq_interactive_nop_timer;
 		spin_lock_init(&pcpu->load_lock);
 		init_rwsem(&pcpu->enable_sem);
-		init_rwsem(&pcpu->hotplug_sem);
+		spin_lock_init(&pcpu->suspend_lock);
 	}
 
 	spin_lock_init(&target_loads_lock);
