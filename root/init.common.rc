@@ -71,8 +71,8 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
-    # Do not try to schedule processes on the least number execution units
-    write /sys/devices/system/cpu/sched_smt_power_savings 0
+    # Try to schedule processes on the least number execution units
+    write /sys/devices/system/cpu/sched_smt_power_savings 2
 
     # GFx related hacks/tweaks
     write /sys/modules/gfx/parameters/debug 0
