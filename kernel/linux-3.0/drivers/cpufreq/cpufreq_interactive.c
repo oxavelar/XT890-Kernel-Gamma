@@ -192,7 +192,7 @@ static void cpufreq_interactive_timer_resched(
 
 	spin_lock_irqsave(&pcpu->load_lock, flags);
 	pcpu->time_in_idle =
-		get_cpu_idle_time(smp_processor_id(),
+		get_cpu_idle_time(raw_smp_processor_id(),
 				     &pcpu->time_in_idle_timestamp);
 	pcpu->cputime_speedadj = 0;
 	pcpu->cputime_speedadj_timestamp = pcpu->time_in_idle_timestamp;
@@ -471,7 +471,7 @@ exit:
 static void cpufreq_interactive_idle_start(void)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+		&per_cpu(cpuinfo, raw_smp_processor_id());
 	int pending;
 
 	if (!down_read_trylock(&pcpu->enable_sem))
@@ -502,7 +502,7 @@ static void cpufreq_interactive_idle_start(void)
 static void cpufreq_interactive_idle_end(void)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, smp_processor_id());
+		&per_cpu(cpuinfo, raw_smp_processor_id());
 
 	if (!down_read_trylock(&pcpu->enable_sem))
 		return;
@@ -517,7 +517,7 @@ static void cpufreq_interactive_idle_end(void)
 	} else if (time_after_eq(jiffies, pcpu->cpu_timer.expires)) {
 		del_timer(&pcpu->cpu_timer);
 		del_timer(&pcpu->cpu_slack_timer);
-		cpufreq_interactive_timer(smp_processor_id());
+		cpufreq_interactive_timer(raw_smp_processor_id());
 	}
 
 	up_read(&pcpu->enable_sem);
