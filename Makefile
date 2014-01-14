@@ -45,7 +45,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -flto \
         -mno-android \
-        -O2 \
+        -Ofast \
         -march=atom \
         -msse2 \
         -msse3 \

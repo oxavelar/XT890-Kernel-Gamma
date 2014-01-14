@@ -56,7 +56,6 @@ struct cpufreq_interactive_cpuinfo {
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
 	int governor_enabled;
-	spinlock_t suspend_lock;
 };
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
@@ -625,49 +624,31 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	unsigned long flags;
-	unsigned int cpu, first_cpu;
-	struct cpufreq_interactive_cpuinfo *pcpu;
+	unsigned int first_cpu, cpu;
 
-	pcpu = &per_cpu(cpuinfo, get_cpu());
-	spin_lock_irqsave(&pcpu->suspend_lock, flags);
-	if (num_online_cpus() < num_present_cpus()) goto out;
-	/* Only let first cpu do the call */
+	if (num_online_cpus() < num_present_cpus()) return;
+
 	first_cpu = cpumask_first(cpu_online_mask);
-	if (pcpu->policy->cpu != first_cpu) goto out;
-
-	preempt_disable();
 	for_each_online_cpu(cpu)
 		if (cpu != first_cpu)
 			cpu_down(cpu);
-out:
-	spin_unlock_irqrestore(&pcpu->suspend_lock, flags);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	unsigned long flags;
-	unsigned int cpu, first_cpu;
-	struct cpufreq_interactive_cpuinfo *pcpu;
+	unsigned int first_cpu, cpu;
 
-	pcpu = &per_cpu(cpuinfo, get_cpu());
-	spin_lock_irqsave(&pcpu->suspend_lock, flags);
-	if (num_online_cpus() == num_present_cpus()) goto out;
-	/* Only let first cpu do the call */
+	if (num_online_cpus() == num_present_cpus()) return;
+
 	first_cpu = cpumask_first(cpu_online_mask);
-	if (pcpu->policy->cpu != first_cpu) goto out;
-
-	preempt_disable();
 	for_each_present_cpu(cpu)
 		if (cpu != first_cpu)
-			cpu_up(cpu);
-out:
-	spin_unlock_irqrestore(&pcpu->suspend_lock, flags);
+		cpu_up(cpu);
 }
 
 static struct early_suspend interactive_power_suspend = {
 		.suspend = interactive_early_suspend,
 		.resume = interactive_late_resume,
-		.level = EARLY_SUSPEND_LEVEL_DISABLE_FB,
+		.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
 };
 
 static int cpufreq_interactive_notifier(
@@ -1126,6 +1107,10 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			}
 			pcpu->governor_enabled = 1;
 			up_write(&pcpu->enable_sem);
+
+			/* Only get one callback registered, this is the master */
+			if (pcpu->policy->cpu == cpumask_first(cpu_online_mask))
+				register_early_suspend(&interactive_power_suspend);
 		}
 
 		/*
@@ -1148,8 +1133,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			&cpufreq_notifier_block, CPUFREQ_TRANSITION_NOTIFIER);
 		mutex_unlock(&gov_lock);
 
-		register_early_suspend(&interactive_power_suspend);
 		pr_info("interactivex2 registered\n");
+
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -1210,7 +1195,6 @@ static int __init cpufreq_interactive_init(void)
 		pcpu->cpu_slack_timer.function = cpufreq_interactive_nop_timer;
 		spin_lock_init(&pcpu->load_lock);
 		init_rwsem(&pcpu->enable_sem);
-		spin_lock_init(&pcpu->suspend_lock);
 	}
 
 	spin_lock_init(&target_loads_lock);
