@@ -72,7 +72,7 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
     # Try to schedule processes on the least number execution units
-    write /sys/devices/system/cpu/sched_smt_power_savings 1
+    write /sys/devices/system/cpu/sched_smt_power_savings 2
 
     # GFx related hacks/tweaks
     write /sys/modules/gfx/parameters/debug 0
@@ -87,15 +87,15 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 3200
     write /proc/sys/vm/dirty_writeback_centisecs 800
-    write /proc/sys/vm/dirty_ratio 99
-    write /proc/sys/vm/dirty_background_ratio 99
-    write /proc/sys/vm/vfs_cache_pressure 40
+    write /proc/sys/vm/dirty_ratio 2
+    write /proc/sys/vm/dirty_background_ratio 40
+    write /proc/sys/vm/vfs_cache_pressure 10
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/run 1
-    write /sys/kernel/mm/ksm/pages_to_scan 4096
+    write /sys/kernel/mm/ksm/pages_to_scan 2048
     write /sys/kernel/mm/ksm/sleep_millisecs 8000
 
     # Default Read Ahead value for sdcard devices
