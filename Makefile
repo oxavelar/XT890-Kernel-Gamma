@@ -54,8 +54,12 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mcx16 \
         -msahf \
         -mmovbe \
+        -mfancy-math-387 \
         -ftree-vectorize \
+        -funswitch-loops \
         -fpredictive-commoning \
+        -fgcse-after-reload \
+        -fexcess-precision=fast \
         -floop-block \
         --param loop-block-tile-size=512 \
         -floop-interchange \
@@ -66,6 +70,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
+        -fomit-frame-pointer \
         -foptimize-register-move \
         -fmodulo-sched \
         -fmodulo-sched-allow-regmoves \
