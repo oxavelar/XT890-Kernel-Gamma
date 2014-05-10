@@ -78,28 +78,28 @@ on boot
     write /sys/modules/gfx/parameters/debug 0
     write /sys/modules/gfx/parameters/gPVRDebugLevel 0
     write /sys/modules/gfx/parameters/topaz_clockgating 1
-    write /sys/modules/gfx/parameters/cpu_relax 1
+    write /sys/modules/gfx/parameters/cpu_relax 0
 
     # Memory and caching boosts
-    write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_writeback_centisecs 400
-    write /proc/sys/vm/dirty_ratio 2
-    write /proc/sys/vm/dirty_background_ratio 4
+    write /proc/sys/vm/dirty_expire_centisecs 250
+    write /proc/sys/vm/dirty_writeback_centisecs 1250
+    write /proc/sys/vm/dirty_ratio 90
+    write /proc/sys/vm/dirty_background_ratio 70
     write /proc/sys/vm/vfs_cache_pressure 10
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
     # Enabling kernel same-page merging (KSM)
+    write /sys/kernel/mm/ksm/pages_to_scan 2000
+    write /sys/kernel/mm/ksm/sleep_millisecs 3000
     write /sys/kernel/mm/ksm/run 1
-    write /sys/kernel/mm/ksm/pages_to_scan 100
-    write /sys/kernel/mm/ksm/sleep_millisecs 500
 
     # Reducing write latencies, we got eMMC's + SD
-    write /sys/block/mmcblk0/queue/nr_requests 4
-    write /sys/block/mmcblk1/queue/nr_requests 64
+    write /sys/block/mmcblk0/queue/nr_requests 8
+    write /sys/block/mmcblk1/queue/nr_requests 32
     # Default Read Ahead value for sdcard devices
-    write /sys/block/mmcblk0/queue/read_ahead_kb 4
-    write /sys/block/mmcblk1/queue/read_ahead_kb 64
+    write /sys/block/mmcblk0/queue/read_ahead_kb 512
+    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
