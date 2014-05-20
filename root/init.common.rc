@@ -72,7 +72,7 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
     # Try to schedule processes on the least number execution units
-    write /sys/devices/system/cpu/sched_smt_power_savings 2
+    #write /sys/devices/system/cpu/sched_smt_power_savings 2
 
     # GFx related hacks/tweaks
     write /sys/modules/gfx/parameters/debug 0
@@ -85,13 +85,13 @@ on boot
     write /proc/sys/vm/dirty_writeback_centisecs 1250
     write /proc/sys/vm/dirty_ratio 90
     write /proc/sys/vm/dirty_background_ratio 70
-    write /proc/sys/vm/vfs_cache_pressure 10
+    write /proc/sys/vm/vfs_cache_pressure 5
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
     # Enabling kernel same-page merging (KSM)
-    write /sys/kernel/mm/ksm/pages_to_scan 2000
-    write /sys/kernel/mm/ksm/sleep_millisecs 3000
+    write /sys/kernel/mm/ksm/pages_to_scan 1000
+    write /sys/kernel/mm/ksm/sleep_millisecs 12000
     write /sys/kernel/mm/ksm/run 1
 
     # Reducing write latencies, we got eMMC's + SD
@@ -113,8 +113,8 @@ on boot
     write /sys/block/mmcblk1/queue/iosched/back_seek_penalty 1
     write /sys/block/mmcblk0/queue/iosched/slice_idle 0
     write /sys/block/mmcblk1/queue/iosched/slice_idle 0
-    write /sys/block/mmcblk0/queue/iosched/quantum 20
-    write /sys/block/mmcblk1/queue/iosched/quantum 20
+    write /sys/block/mmcblk0/queue/iosched/quantum 40
+    write /sys/block/mmcblk1/queue/iosched/quantum 40
 
     # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576
@@ -137,7 +137,7 @@ on post-fs-data
 
 on charger
     # /system is not already mounted under COS
-    mount ext4 /dev/block/system /system ro noatime nodiratime
+    mount ext4 /dev/block/system /system ro noatime barrier=0 nobh
     start pvrsrvctl
     # Reduce backlight
     write /sys/class/backlight/psb-bl/brightness 40

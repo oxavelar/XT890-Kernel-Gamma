@@ -66,15 +66,18 @@ static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
 
+/* To keep track when the screen is off */
+static bool suspended = false;
+
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = 1600000;
+static unsigned int hispeed_freq = 1400000;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 95
+#define DEFAULT_GO_HISPEED_LOAD 98
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 85
+#define DEFAULT_TARGET_LOAD 98
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -89,7 +92,7 @@ static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 /*
  * The sample rate of the timer used to increase frequency
  */
-#define DEFAULT_TIMER_RATE (16 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE (24 * USEC_PER_MSEC)
 static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 
 /*
@@ -126,11 +129,11 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 * Because of this, whitelist specific known (series) of CPUs by default, and
 * leave all others up to the user.
 */
-//#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
-//static bool io_is_busy = 1;
-//#else
+#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
+static bool io_is_busy = 1;
+#else
 static bool io_is_busy = 0;
-//#endif
+#endif
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -169,7 +172,7 @@ static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 }
 
 static inline cputime64_t get_cpu_idle_time(unsigned int cpu,
-					    cputime64_t *wall)
+						cputime64_t *wall)
 {
 	u64 idle_time = get_cpu_idle_time_us(cpu, wall);
 
@@ -196,7 +199,7 @@ static void cpufreq_interactive_timer_resched(
 	spin_lock_irqsave(&pcpu->load_lock, flags);
 	pcpu->time_in_idle =
 		get_cpu_idle_time(raw_smp_processor_id(),
-				     &pcpu->time_in_idle_timestamp);
+					 &pcpu->time_in_idle_timestamp);
 	pcpu->cputime_speedadj = 0;
 	pcpu->cputime_speedadj_timestamp = pcpu->time_in_idle_timestamp;
 	spin_unlock_irqrestore(&pcpu->load_lock, flags);
@@ -390,9 +393,9 @@ static void cpufreq_interactive_timer(unsigned long data)
 	}
 
 	if (pcpu->target_freq >= hispeed_freq &&
-	    new_freq > pcpu->target_freq &&
-	    now - pcpu->hispeed_validate_time <
-	    freq_to_above_hispeed_delay(pcpu->target_freq)) {
+		new_freq > pcpu->target_freq &&
+		now - pcpu->hispeed_validate_time <
+		freq_to_above_hispeed_delay(pcpu->target_freq)) {
 		trace_cpufreq_interactive_notyet(
 			data, cpu_load, pcpu->target_freq,
 			pcpu->policy->cur, new_freq);
@@ -405,7 +408,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 					   new_freq, CPUFREQ_RELATION_L,
 					   &index)) {
 		pr_warn_once("timer %d: cpufreq_frequency_table_target error\n",
-			     (int) data);
+				 (int) data);
 		goto rearm;
 	}
 
@@ -417,7 +420,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 	 */
 	if (new_freq < pcpu->floor_freq) {
 		if (cputime64_sub(now, pcpu->floor_validate_time)
-		    < min_sample_time) {
+			< min_sample_time) {
 			trace_cpufreq_interactive_notyet(
 				data, cpu_load, pcpu->target_freq,
 				pcpu->policy->cur, new_freq);
@@ -533,13 +536,16 @@ static int cpufreq_interactive_speedchange_task(void *data)
 	unsigned long flags;
 	struct cpufreq_interactive_cpuinfo *pcpu;
 
+	/* Block changing frequency speeds when suspended. */
+	if (suspended) return 0;
+
 	while (1) {
 		set_current_state(TASK_INTERRUPTIBLE);
 		spin_lock_irqsave(&speedchange_cpumask_lock, flags);
 
 		if (cpumask_empty(&speedchange_cpumask)) {
 			spin_unlock_irqrestore(&speedchange_cpumask_lock,
-					       flags);
+						   flags);
 			schedule();
 
 			if (kthread_should_stop())
@@ -578,8 +584,8 @@ static int cpufreq_interactive_speedchange_task(void *data)
 							max_freq,
 							CPUFREQ_RELATION_H);
 			trace_cpufreq_interactive_setspeed(cpu,
-						     pcpu->target_freq,
-						     pcpu->policy->cur);
+							 pcpu->target_freq,
+							 pcpu->policy->cur);
 
 			up_read(&pcpu->enable_sem);
 		}
@@ -628,18 +634,33 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 
 	if (num_online_cpus() < num_present_cpus()) return;
 
+	/* If we are here, please take all the other cores out */
 	first_cpu = cpumask_first(cpu_online_mask);
 	for_each_online_cpu(cpu)
 		if (cpu != first_cpu)
 			cpu_down(cpu);
+
+	suspended = true;
+	/* Now we will go and  limit the policy to powersaving */
+	struct cpufreq_interactive_cpuinfo *pcpu;
+	pcpu = &per_cpu(cpuinfo, first_cpu);
+	__cpufreq_driver_target(pcpu->policy, pcpu->policy->min, CPUFREQ_RELATION_L);
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
 	unsigned int first_cpu, cpu;
 
 	if (num_online_cpus() == num_present_cpus()) return;
-
+	
 	first_cpu = cpumask_first(cpu_online_mask);
+
+	suspended = false;
+	/* Now we can unlimit the policy to hi-speed */
+	struct cpufreq_interactive_cpuinfo *pcpu;
+	pcpu = &per_cpu(cpuinfo, first_cpu);
+	__cpufreq_driver_target(pcpu->policy, pcpu->policy->max, CPUFREQ_RELATION_H);
+
+	/* If we are here, please take all the other cores back */
 	for_each_present_cpu(cpu)
 		if (cpu != first_cpu)
 		cpu_up(cpu);
@@ -741,7 +762,7 @@ static ssize_t show_target_loads(
 
 	for (i = 0; i < ntarget_loads; i++)
 		ret += sprintf(buf + ret, "%u%s", target_loads[i],
-			       i & 0x1 ? ":" : " ");
+				   i & 0x1 ? ":" : " ");
 
 	ret += sprintf(buf + ret, "\n");
 	spin_unlock_irqrestore(&target_loads_lock, flags);
@@ -784,7 +805,7 @@ static ssize_t show_above_hispeed_delay(
 
 	for (i = 0; i < nabove_hispeed_delay; i++)
 		ret += sprintf(buf + ret, "%u%s", above_hispeed_delay[i],
-			       i & 0x1 ? ":" : " ");
+				   i & 0x1 ? ":" : " ");
 
 	ret += sprintf(buf + ret, "\n");
 	spin_unlock_irqrestore(&above_hispeed_delay_lock, flags);
@@ -842,7 +863,7 @@ static struct global_attr hispeed_freq_attr = __ATTR(hispeed_freq, 0644,
 
 
 static ssize_t show_go_hispeed_load(struct kobject *kobj,
-				     struct attribute *attr, char *buf)
+					 struct attribute *attr, char *buf)
 {
 	return sprintf(buf, "%lu\n", go_hispeed_load);
 }
@@ -1045,8 +1066,8 @@ static struct attribute_group interactive_attr_group = {
 };
 
 static int cpufreq_interactive_idle_notifier(struct notifier_block *nb,
-					     unsigned long val,
-					     void *data)
+						 unsigned long val,
+						 void *data)
 {
 	switch (val) {
 	case IDLE_START:
@@ -1203,7 +1224,7 @@ static int __init cpufreq_interactive_init(void)
 	mutex_init(&gov_lock);
 	speedchange_task =
 		kthread_create(cpufreq_interactive_speedchange_task, NULL,
-			       "cfinteractive");
+				   "cfinteractive");
 	if (IS_ERR(speedchange_task))
 		return PTR_ERR(speedchange_task);
 
