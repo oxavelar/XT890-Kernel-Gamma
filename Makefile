@@ -46,6 +46,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -flto \
         -mno-android \
         -O2 \
+        -m32 \
         -march=atom \
         -msse2 \
         -msse3 \
@@ -54,19 +55,18 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mcx16 \
         -msahf \
         -mmovbe \
-        -mfancy-math-387 \
         -ftree-vectorize \
         -funswitch-loops \
         -fpredictive-commoning \
         -fgcse-after-reload \
         -floop-block \
-        --param loop-block-tile-size=512 \
+        --param loop-block-tile-size=10 \
         -floop-interchange \
         -floop-strip-mine \
         -fgraphite-identity \
         -floop-parallelize-all \
         -ftree-loop-im \
-        -ftree-parallelize-loops=4 \
+        -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
         -fomit-frame-pointer \
@@ -87,7 +87,7 @@ export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=200M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=300M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
 
 .PHONY: bootimage
 bootimage: kernel modules
@@ -117,7 +117,7 @@ modules:
 	# General modules from the kernel
 	mkdir -p $(MBUILD_OUT_PATH)
 	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) $(KDEFCONFIG)
-	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto -fno-tree-vectorize" modules
+	$(MAKE) -C $(KSRC_PATH) O=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto" modules
 	# Wireless modules
 	cd $(WL12XX_SRC_PATH); scripts/driver-select wl12xx
 	$(MAKE) -C $(WL12XX_SRC_PATH) KLIB=$(MBUILD_OUT_PATH) KLIB_BUILD=$(MBUILD_OUT_PATH) ANDROID_TOOLCHAIN_FLAGS+="-fno-lto -fno-tree-vectorize"
