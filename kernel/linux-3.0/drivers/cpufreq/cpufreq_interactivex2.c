@@ -99,7 +99,7 @@ static unsigned long timer_rate = DEFAULT_TIMER_RATE;
  * Wait this long before raising speed above hispeed, by default a single
  * timer interval.
  */
-#define DEFAULT_ABOVE_HISPEED_DELAY (DEFAULT_TIMER_RATE)
+#define DEFAULT_ABOVE_HISPEED_DELAY (3 * DEFAULT_TIMER_RATE)
 static unsigned int default_above_hispeed_delay[] = {
 	DEFAULT_ABOVE_HISPEED_DELAY };
 static spinlock_t above_hispeed_delay_lock;
