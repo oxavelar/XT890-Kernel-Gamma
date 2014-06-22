@@ -56,7 +56,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -msahf \
         -mmovbe \
         -ftree-vectorize \
-        -fpeel-loops \
         -fprefetch-loop-arrays \
         -funswitch-loops \
         -fpredictive-commoning \
