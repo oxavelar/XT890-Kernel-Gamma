@@ -182,15 +182,15 @@ static struct cpuidle_state snb_cstates[MWAIT_MAX_NUM_CSTATES] = {
 
 static struct cpuidle_state atom_cstates[MWAIT_MAX_NUM_CSTATES] = {
 	{ /* MWAIT C0 */ },
-	{ /* MWAIT C1 */
-		.name = "C1-ATM",
+	{
+		.name = "C1E-ATM",
 		.desc = "MWAIT 0x00",
 		.driver_data = (void *) 0x00,
 		.flags = CPUIDLE_FLAG_TIME_VALID,
-		.exit_latency = 1,
-		.target_residency = 4,
+		.exit_latency = 10,
+		.target_residency = 20,
 		.enter = &intel_idle },
-	{ /* MWAIT C2 */
+	{
 		.name = "C2-ATM",
 		.desc = "MWAIT 0x10",
 		.driver_data = (void *) 0x10,
@@ -198,8 +198,7 @@ static struct cpuidle_state atom_cstates[MWAIT_MAX_NUM_CSTATES] = {
 		.exit_latency = 20,
 		.target_residency = 80,
 		.enter = &intel_idle },
-	{ /* MWAIT C3 */ },
-	{ /* MWAIT C4 */
+	{
 		.name = "C4-ATM",
 		.desc = "MWAIT 0x30",
 		.driver_data = (void *) 0x30,
@@ -207,8 +206,7 @@ static struct cpuidle_state atom_cstates[MWAIT_MAX_NUM_CSTATES] = {
 		.exit_latency = 100,
 		.target_residency = 400,
 		.enter = &intel_idle },
-	{ /* MWAIT C5 */ },
-	{ /* MWAIT C6 */
+	{
 		.name = "C6-ATM",
 		.desc = "MWAIT 0x52",
 		.driver_data = (void *) 0x52,
@@ -220,41 +218,37 @@ static struct cpuidle_state atom_cstates[MWAIT_MAX_NUM_CSTATES] = {
 
 #ifdef CONFIG_ATOM_SOC_POWER
 static struct cpuidle_state mfld_cstates[MWAIT_MAX_NUM_CSTATES] = {
-	{ /* MWAIT C0 */
-		.power_usage = C0_POWER_USAGE },
-	{ /* MWAIT C1 */
-		.name = "ATM-C1",
+	{ /* MWAIT C0 */ },
+	{
+		.name = "C1E-ATM",
 		.desc = "MWAIT 0x00",
 		.driver_data = (void *) 0x00,
 		.flags = CPUIDLE_FLAG_TIME_VALID,
-		.exit_latency = CSTATE_EXIT_LATENCY_C1,
-		.target_residency = 4,
+		.exit_latency = 10,
+		.target_residency = 20,
 		.enter = &intel_idle },
-	{ /* MWAIT C2 */
-		.name = "ATM-C2",
+	{
+		.name = "C2-ATM",
 		.desc = "MWAIT 0x10",
 		.driver_data = (void *) 0x10,
 		.flags = CPUIDLE_FLAG_TIME_VALID,
-		.exit_latency = CSTATE_EXIT_LATENCY_C2,
+		.exit_latency = 20,
 		.target_residency = 80,
 		.enter = &intel_idle },
-	{ /* MWAIT C3 */ },
-	{ /* MWAIT C4 */
-		.name = "ATM-C4",
+	{
+		.name = "C4-ATM",
 		.desc = "MWAIT 0x30",
-		.driver_data = (void *) C4_HINT,
+		.driver_data = (void *) 0x30,
 		.flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_TLB_FLUSHED,
-		.exit_latency = CSTATE_EXIT_LATENCY_C4,
+		.exit_latency = 100,
 		.target_residency = 400,
 		.enter = &intel_idle },
-	{ /* MWAIT C5 */ },
-	{ /* MWAIT C6 */
-		.name = "ATM-C6",
+	{
+		.name = "C6-ATM",
 		.desc = "MWAIT 0x52",
-		.driver_data = (void *) C6_HINT,
+		.driver_data = (void *) 0x52,
 		.flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_TLB_FLUSHED,
-		.exit_latency = CSTATE_EXIT_LATENCY_C6,
-		.power_usage  = C6_POWER_USAGE,
+		.exit_latency = 140,
 		.target_residency = 560,
 		.enter = &soc_s0ix_idle },
 	{
