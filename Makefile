@@ -38,7 +38,7 @@ KBUILD_OUT_PATH = $(OUT_PATH)/kbuild
 MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 ############################################################################
-#################### KERNEL OPTIMIZATION FLAGS FOR THE ATOM ################
+############# KERNEL OPTIMIZATION FLAGS FOR THE ATOM Z2480 ################
 ############################################################################
 
 export ANDROID_TOOLCHAIN_FLAGS := \
@@ -47,7 +47,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O2 \
         -m32 \
-        -march=atom \
+        -march=core2 \
         -msse2 \
         -msse3 \
         -mssse3 \
@@ -56,16 +56,17 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -msahf \
         -mmovbe \
         -ftree-vectorize \
+        -fpeel-loops \
+        -fprefetch-loop-arrays \
         -funswitch-loops \
         -fpredictive-commoning \
         -fgcse-after-reload \
         -floop-block \
-        --param loop-block-tile-size=10 \
         -floop-interchange \
         -floop-strip-mine \
         -fgraphite-identity \
-        -floop-parallelize-all \
         -ftree-loop-im \
+        -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
