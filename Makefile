@@ -47,7 +47,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O2 \
         -m32 \
-        -march=core2 \
+        -Wno-undef \
+        -march=atom \
         -msse2 \
         -msse3 \
         -mssse3 \
@@ -65,8 +66,6 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -floop-strip-mine \
         -fgraphite-identity \
         -ftree-loop-im \
-        -floop-parallelize-all \
-        -ftree-parallelize-loops=2 \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
         -fomit-frame-pointer \
