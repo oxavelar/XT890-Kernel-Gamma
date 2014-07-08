@@ -71,23 +71,17 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
-    # GFx related hacks/tweaks
-    write /sys/modules/gfx/parameters/debug 0
-    write /sys/modules/gfx/parameters/gPVRDebugLevel 0
-    write /sys/modules/gfx/parameters/topaz_clockgating 1
-    write /sys/modules/gfx/parameters/cpu_relax 0
-
     # Memory and caching boosts
-    write /proc/sys/vm/dirty_expire_centisecs 1000
+    write /proc/sys/vm/dirty_expire_centisecs 3000
     write /proc/sys/vm/dirty_writeback_centisecs 6000
-    write /proc/sys/vm/dirty_ratio 70
+    write /proc/sys/vm/dirty_ratio 80
     write /proc/sys/vm/dirty_background_ratio 90
-    write /proc/sys/vm/vfs_cache_pressure 10
+    write /proc/sys/vm/vfs_cache_pressure 40
     write /proc/sys/vm/dirty_bytes 0
     write /proc/sys/vm/dirty_background_bytes 0
 
     # Enabling kernel same-page merging (KSM)
-    write /sys/kernel/mm/ksm/pages_to_scan 1000
+    write /sys/kernel/mm/ksm/pages_to_scan 2000
     write /sys/kernel/mm/ksm/sleep_millisecs 10000
     write /sys/kernel/mm/ksm/run 1
 

@@ -74,7 +74,7 @@
 
 #define HDMI_MONITOR_NAME_LENGTH 20
 
-int drm_psb_debug = PSB_D_WARN;
+int drm_psb_debug = PSB_D_DISABLED;
 int drm_psb_enable_cabc = 1;
 int drm_psb_enable_gamma;
 int drm_psb_enable_color_conversion;
@@ -93,8 +93,8 @@ int drm_topaz_pmpolicy = PSB_PMPOLICY_POWERDOWN;
 int drm_topaz_sbuswa;
 int drm_psb_ospm = 1;
 int drm_psb_gl3_enable = 1;
-int drm_psb_topaz_clockgating;
-int gfxrtdelay = 2 * 1000;
+int drm_psb_topaz_clockgating = 1;
+int gfxrtdelay = 10 * 1000;
 int drm_psb_3D_vblank = 1;
 int drm_psb_smart_vsync = 1;
 int drm_psb_te_timer_delay = (DRM_HZ / 40);

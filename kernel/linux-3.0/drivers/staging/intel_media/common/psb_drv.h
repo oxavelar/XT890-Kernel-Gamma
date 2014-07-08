@@ -1086,6 +1086,7 @@ struct backlight_device *psb_get_backlight_device(void);
 /*
  *Debug print bits setting
  */
+#define PSB_D_DISABLED     (0)
 #define PSB_D_GENERAL (1 << 0)
 #define PSB_D_INIT    (1 << 1)
 #define PSB_D_IRQ     (1 << 2)
