@@ -56,16 +56,17 @@
 #include <linux/kernel.h>
 #include <linux/cpuidle.h>
 #include <linux/clockchips.h>
-#include <linux/hrtimer.h>	/* ktime_get_real() */
 #include <trace/events/power.h>
 #include <linux/sched.h>
 #include <linux/notifier.h>
 #include <linux/cpu.h>
+#include <linux/module.h>
+#include <linux/atomic.h>
+#include <linux/intel_mid_pm.h>
 #include <asm/mwait.h>
 #include <asm/msr.h>
-#include <asm/atomic.h>
 #include <asm/intel-mid.h>
-#include <linux/intel_mid_pm.h>
+#include <asm/io_apic.h>
 
 #define INTEL_IDLE_VERSION "0.4"
 #define PREFIX "intel_idle: "
@@ -224,15 +225,15 @@ static struct cpuidle_state mfld_cstates[MWAIT_MAX_NUM_CSTATES] = {
 		.desc = "MWAIT 0x00",
 		.driver_data = (void *) 0x00,
 		.flags = CPUIDLE_FLAG_TIME_VALID,
-		.exit_latency = 10,
-		.target_residency = 20,
+		.exit_latency = CSTATE_EXIT_LATENCY_C1,
+		.target_residency = 4,
 		.enter = &intel_idle },
 	{
 		.name = "C2-ATM",
 		.desc = "MWAIT 0x10",
 		.driver_data = (void *) 0x10,
 		.flags = CPUIDLE_FLAG_TIME_VALID,
-		.exit_latency = 20,
+		.exit_latency = CSTATE_EXIT_LATENCY_C2,
 		.target_residency = 80,
 		.enter = &intel_idle },
 	{
@@ -240,7 +241,7 @@ static struct cpuidle_state mfld_cstates[MWAIT_MAX_NUM_CSTATES] = {
 		.desc = "MWAIT 0x30",
 		.driver_data = (void *) 0x30,
 		.flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_TLB_FLUSHED,
-		.exit_latency = 100,
+		.exit_latency = CSTATE_EXIT_LATENCY_C4,
 		.target_residency = 400,
 		.enter = &intel_idle },
 	{
@@ -248,7 +249,7 @@ static struct cpuidle_state mfld_cstates[MWAIT_MAX_NUM_CSTATES] = {
 		.desc = "MWAIT 0x52",
 		.driver_data = (void *) 0x52,
 		.flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_TLB_FLUSHED,
-		.exit_latency = 140,
+		.exit_latency = CSTATE_EXIT_LATENCY_C6,
 		.target_residency = 560,
 		.enter = &soc_s0ix_idle },
 	{

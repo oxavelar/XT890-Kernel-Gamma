@@ -77,9 +77,15 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 
 # The following modules have problems with -ftree-vectorize
 # and if removed will get battery reading errors
-export CFLAGS_platform_max17042.o           := -fno-tree-vectorize
-export CFLAGS_max17042_battery.o            := -fno-tree-vectorize
-export CFLAGS_intel_mdf_battery.o           := -fno-tree-vectorize
+ifeq ($(KVERSION), linux-3.0)
+    export CFLAGS_platform_max17042.o       := -fno-tree-vectorize
+    export CFLAGS_max17042_battery.o        := -fno-tree-vectorize
+    export CFLAGS_intel_mdf_battery.o       := -fno-tree-vectorize
+endif
+ifeq ($(KVERSION), linux-3.4)
+    export CFLAGS_langwell_udc.o            := -Wno-unused-function -Wno-format
+    export CFLAGS_sh_css.o                  := -Wno-error=maybe-uninitialized
+endif
 
 ############################################################################
 ########################### KERNEL BUILD STEPS #############################
