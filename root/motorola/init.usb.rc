@@ -81,6 +81,81 @@ on property:sys.usb.config=accessory,audio_source,adb
     write /sys/class/android_usb/android0/idVendor 18d1
     write /sys/class/android_usb/android0/idProduct 2d05
     write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 0
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB MTP configuration
+on property:sys.usb.config=mtp
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09fb
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 0
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB MTP configuration, with adb
+on property:sys.usb.config=mtp,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09fc
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 1
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB PTP configuration
+on property:sys.usb.config=ptp
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09fd
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 0
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB PTP configuration, with adb
+on property:sys.usb.config=ptp,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09fe
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 1
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB RNDIS configuration
+on property:sys.usb.config=rndis
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09f3
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 0
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB RNDIS configuration, with adb
+on property:sys.usb.config=rndis,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09f4
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 1
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop sys.usb.state ${sys.usb.config}
+
+# USB ACM configuration, with rndis and adb
+on property:sys.usb.config=rndis,acm,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x8087
+    write /sys/class/android_usb/android0/idProduct 0x09f8
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/bus/pci/devices/0000:00:02.3/sdis 1
     write /sys/class/android_usb/android0/enable 1
     start adbd
     setprop sys.usb.state ${sys.usb.config}
