@@ -47,8 +47,6 @@ export Z2480_OPTIMIZATION_FLAGS := \
         -march=core2 \
         -mtune=pentium \
         -m32 \
-        -msse2 \
-        -msse3 \
         -mssse3 \
         -mcx16 \
         -msahf \
