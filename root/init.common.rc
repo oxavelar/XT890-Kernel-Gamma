@@ -74,11 +74,11 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 250
     write /proc/sys/vm/dirty_writeback_centisecs 2500
-    write /proc/sys/vm/vfs_cache_pressure 50
+    write /proc/sys/vm/vfs_cache_pressure 40
 
     # Enabling kernel same-page merging (KSM)
-    write /sys/kernel/mm/ksm/pages_to_scan 100
-    write /sys/kernel/mm/ksm/sleep_millisecs 500
+    write /sys/kernel/mm/ksm/pages_to_scan 8000
+    write /sys/kernel/mm/ksm/sleep_millisecs 20000
     write /sys/kernel/mm/ksm/run 1
 
     # Reducing write latencies, we got eMMC's + SD
