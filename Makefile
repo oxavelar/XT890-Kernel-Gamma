@@ -46,7 +46,6 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 export Z2480_OPTIMIZATION_FLAGS := \
         -march=core2 \
         -mtune=pentium \
-        -m32 \
         -mssse3 \
         -mcx16 \
         -msahf \
@@ -95,7 +94,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=192M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=4"
 
 .PHONY: bootimage
 bootimage: kernel modules

@@ -36,10 +36,6 @@ on boot
     chown root system /sys/module/lowmemorykiller/parameters/minfree
     chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
 
-# Enable low memory killer to check file pages
-    write /sys/module/lowmemorykiller/parameters/minfile 2048,3072,5120,12800,17920,23040
-    write /sys/module/lowmemorykiller/parameters/check_filepages 1
-
 # The following impacts memory transactions too and can speed up or
 # slow down the system
     write /proc/sys/vm/overcommit_ratio 100
