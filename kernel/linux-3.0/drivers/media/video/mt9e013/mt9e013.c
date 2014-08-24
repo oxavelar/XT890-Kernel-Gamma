@@ -1433,7 +1433,8 @@ static int nearest_resolution_index(int w, int h)
 		}
 		if (idx != -1)
 			break;
-		m = LONG_MAX;
+		//m = LONG_MAX;
+		m = ((1 << 15) - 1);
 	}
 	return idx;
 }

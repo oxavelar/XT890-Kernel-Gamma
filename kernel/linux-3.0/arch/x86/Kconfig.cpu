@@ -374,7 +374,7 @@ config X86_USE_PPRO_CHECKSUM
 
 config X86_ENABLE_SSSE3
 	def_bool y
-	depends on (MATOM) && !UML
+	depends on (MATOM && X86_32) && !UML
 
 config X86_USE_3DNOW
 	def_bool y

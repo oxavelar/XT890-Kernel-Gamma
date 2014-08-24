@@ -22,17 +22,21 @@
 ############################################################################
 
 export ARCH := i386
-#export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+ifeq ($(ARCH), i386)
+  export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
+else ifeq ($(ARCH), x86_64)
+  export CROSS_COMPILE := $(PWD)/gcc/x86_64-linux-android-4.8/bin/x86_64-linux-android-
+endif
 export KBUILD_VERBOSE := 0
 
-
+unexport CROSS_COMPILE
 
 ############################################################################
 ##################### LOCAL SETUP AND FILE STRUCTURES ######################
 ############################################################################
 
 KVERSION = linux-3.0
-KDEFCONFIG = i386_mfld_oxavelar_defconfig
+KDEFCONFIG = $(ARCH)_mfld_oxavelar_defconfig
 KSRC_PATH = $(PWD)/kernel/$(KVERSION)
 WL12XX_SRC_PATH = $(PWD)/hardware/ti/wlan/wl12xx-compat
 OUT_PATH = $(PWD)/out
@@ -44,9 +48,11 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 ############################################################################
 
 export Z2480_OPTIMIZATION_FLAGS := \
-        -march=core2 \
-        -mtune=pentium \
+        -march=atom \
+        -mtune=nocona \
+        -mx32 \
         -mssse3 \
+        -mfpmath=387 \
         -mcx16 \
         -msahf \
         -mmovbe \
@@ -59,7 +65,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -flto \
         -mno-android \
-        -O3 \
+        -O2 \
         -ftree-vectorize \
         -fpredictive-commoning \
         -fgcse-after-reload \
@@ -79,6 +85,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 
 export MODULES_TOOLCHAIN_FLAGS := \
         -O2 \
+        -ftree-vectorize \
         $(Z2480_OPTIMIZATION_FLAGS) \
 
 ifeq ($(KVERSION), linux-3.0)
@@ -94,7 +101,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=192M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=4"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=200M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
 
 .PHONY: bootimage
 bootimage: kernel modules
@@ -104,7 +111,7 @@ bootimage: kernel modules
 	# Copy the created modules to the ramdisk path and strip debug symbols
 	find "$(MBUILD_OUT_PATH)" -iname *.ko -exec cp -f \{\} "/tmp/smi-ramdisk/lib/modules/" \;
 	find "$(WL12XX_SRC_PATH)" -iname *.ko -exec cp -f \{\} "/tmp/smi-ramdisk/lib/modules/" \;
-	strip --strip-debug --strip-unneeded /tmp/smi-ramdisk/lib/modules/*.ko
+	strip --strip-debug --strip-unneeded --remove-section=.comment --remove-section=.note /tmp/smi-ramdisk/lib/modules/*.*o
 	"$(PWD)/tools/pack-ramdisk" "/tmp/smi-ramdisk"
 	mv "/tmp/ramdisk.cpio.gz" "$(OUT_PATH)/ramdisk.cpio.gz"
 	# Pack the boot.img

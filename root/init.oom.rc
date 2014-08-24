@@ -15,21 +15,21 @@ on boot
 
 # Define the memory thresholds at which the above process classes will
 # be killed.  These numbers are in pages (4k).
-    setprop ro.FOREGROUND_APP_MEM 2048
-    setprop ro.VISIBLE_APP_MEM 3072
-    setprop ro.SECONDARY_SERVER_MEM 5120
-    setprop ro.BACKUP_APP_MEM 12800
-    setprop ro.HOME_APP_MEM 12800
-    setprop ro.HIDDEN_APP_MEM 17920
-    setprop ro.CONTENT_PROVIDER_MEM 23040
-    setprop ro.EMPTY_APP_MEM 23040
+    setprop ro.FOREGROUND_APP_MEM 4096
+    setprop ro.VISIBLE_APP_MEM 15360
+    setprop ro.SECONDARY_SERVER_MEM 18432
+    setprop ro.BACKUP_APP_MEM 21504
+    setprop ro.HOME_APP_MEM 21504
+    setprop ro.HIDDEN_APP_MEM 24576
+    setprop ro.CONTENT_PROVIDER_MEM 30720
+    setprop ro.EMPTY_APP_MEM 30720
 
 # Write value must be consistent with the above properties.
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,9,15
-    write /sys/module/lowmemorykiller/parameters/minfree 2048,3072,5120,12800,17920,23040
+    write /sys/module/lowmemorykiller/parameters/minfree 4096,15360,18432,21504,24576,30720
     write /sys/module/lowmemorykiller/parameters/debug_level 0
     chown root system /sys/module/lowmemorykiller/parameters/adj
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj

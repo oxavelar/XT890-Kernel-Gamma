@@ -1,14 +1,14 @@
 #
 # Automatically generated make config: don't edit
-# Linux/i386 3.0.8 Kernel Configuration
+# Linux/i386 3.0.101 Kernel Configuration
 #
 CONFIG_X86=y
-# CONFIG_X86_32 is not set
-CONFIG_64BIT=y
-CONFIG_X86_64=y
+CONFIG_X86_32=y
+# CONFIG_64BIT is not set
+# CONFIG_X86_64 is not set
 CONFIG_INSTRUCTION_DECODER=y
-CONFIG_OUTPUT_FORMAT="elf64-x86-64"
-CONFIG_ARCH_DEFCONFIG="arch/x86/configs/x86_64_defconfig"
+CONFIG_OUTPUT_FORMAT="elf32-i386"
+CONFIG_ARCH_DEFCONFIG="arch/x86/configs/i386_defconfig"
 CONFIG_CLOCKSOURCE_WATCHDOG=y
 CONFIG_GENERIC_CLOCKEVENTS=y
 CONFIG_GENERIC_CLOCKEVENTS_BROADCAST=y
@@ -37,7 +37,7 @@ CONFIG_ARCH_SUPPORTS_MSI=y
 CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING=y
 CONFIG_ARCH_SUPPORTS_DEBUG_PAGEALLOC=y
 CONFIG_X86_SMP=y
-CONFIG_X86_64_SMP=y
+# CONFIG_X86_64_SMP is not set
 CONFIG_X86_HT=y
 CONFIG_ARCH_HWEIGHT_CFLAGS="-fcall-saved-rdi -fcall-saved-rsi -fcall-saved-rdx -fcall-saved-rcx -fcall-saved-r8 -fcall-saved-r9 -fcall-saved-r10 -fcall-saved-r11"
 CONFIG_ARCH_CPU_PROBE_RELEASE=y
