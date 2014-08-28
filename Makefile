@@ -49,7 +49,7 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 
 export Z2480_OPTIMIZATION_FLAGS := \
         -march=atom \
-        -mtune=nocona \
+        -mtune=pentium3 \
         -mx32 \
         -mssse3 \
         -mfpmath=387 \
@@ -65,7 +65,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -flto \
         -mno-android \
-        -O2 \
+        -O3 \
         -ftree-vectorize \
         -fpredictive-commoning \
         -fgcse-after-reload \

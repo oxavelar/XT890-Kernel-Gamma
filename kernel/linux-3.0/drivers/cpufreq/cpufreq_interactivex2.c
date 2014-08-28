@@ -70,7 +70,7 @@ static struct mutex gov_lock;
 static bool suspended = false;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = 1600000;
+static unsigned int hispeed_freq = 1400000;
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 99
@@ -86,20 +86,20 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (32 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (80 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
  * The sample rate of the timer used to increase frequency
  */
-#define DEFAULT_TIMER_RATE (64 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE (20 * USEC_PER_MSEC)
 static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 
 /*
  * Wait this long before raising speed above hispeed, by default a single
  * timer interval.
  */
-#define DEFAULT_ABOVE_HISPEED_DELAY (2 * DEFAULT_TIMER_RATE)
+#define DEFAULT_ABOVE_HISPEED_DELAY DEFAULT_TIMER_RATE
 static unsigned int default_above_hispeed_delay[] = {
 	DEFAULT_ABOVE_HISPEED_DELAY };
 static spinlock_t above_hispeed_delay_lock;
@@ -117,7 +117,7 @@ static u64 boostpulse_endtime;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK -1
+#define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 /*
@@ -476,57 +476,57 @@ exit:
 
 static void cpufreq_interactive_idle_start(void)
 {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, raw_smp_processor_id());
-	int pending;
+		struct cpufreq_interactive_cpuinfo *pcpu =
+				&per_cpu(cpuinfo, smp_processor_id());
+		int pending;
 
-	if (!down_read_trylock(&pcpu->enable_sem))
-		return;
-	if (!pcpu->governor_enabled) {
+		if (!down_read_trylock(&pcpu->enable_sem))
+				return;
+		if (!pcpu->governor_enabled) {
+				up_read(&pcpu->enable_sem);
+				return;
+		}
+
+		pending = timer_pending(&pcpu->cpu_timer);
+
+		if (pcpu->target_freq != pcpu->policy->min) {
+				/*
+				 * Entering idle while not at lowest speed.  On some
+				 * platforms this can hold the other CPU(s) at that speed
+				 * even though the CPU is idle. Set a timer to re-evaluate
+				 * speed so this idle CPU doesn't hold the other CPUs above
+				 * min indefinitely.  This should probably be a quirk of
+				 * the CPUFreq driver.
+				 */
+				if (!pending)
+						cpufreq_interactive_timer_resched(pcpu);
+		}
+
 		up_read(&pcpu->enable_sem);
-		return;
-	}
-
-	pending = timer_pending(&pcpu->cpu_timer);
-
-	if (pcpu->target_freq != pcpu->policy->min) {
-		/*
-		 * Entering idle while not at lowest speed.  On some
-		 * platforms this can hold the other CPU(s) at that speed
-		 * even though the CPU is idle. Set a timer to re-evaluate
-		 * speed so this idle CPU doesn't hold the other CPUs above
-		 * min indefinitely.  This should probably be a quirk of
-		 * the CPUFreq driver.
-		 */
-		if (!pending)
-			cpufreq_interactive_timer_resched(pcpu);
-	}
-
-	up_read(&pcpu->enable_sem);
 }
 
 static void cpufreq_interactive_idle_end(void)
 {
-	struct cpufreq_interactive_cpuinfo *pcpu =
-		&per_cpu(cpuinfo, raw_smp_processor_id());
+		struct cpufreq_interactive_cpuinfo *pcpu =
+				&per_cpu(cpuinfo, smp_processor_id());
 
-	if (!down_read_trylock(&pcpu->enable_sem))
-		return;
-	if (!pcpu->governor_enabled) {
+		if (!down_read_trylock(&pcpu->enable_sem))
+				return;
+		if (!pcpu->governor_enabled) {
+				up_read(&pcpu->enable_sem);
+				return;
+		}
+
+		/* Arm the timer for 1-2 ticks later if not already. */
+		if (!timer_pending(&pcpu->cpu_timer)) {
+				cpufreq_interactive_timer_resched(pcpu);
+		} else if (time_after_eq(jiffies, pcpu->cpu_timer.expires)) {
+				del_timer(&pcpu->cpu_timer);
+				del_timer(&pcpu->cpu_slack_timer);
+				cpufreq_interactive_timer(smp_processor_id());
+		}
+
 		up_read(&pcpu->enable_sem);
-		return;
-	}
-
-	/* Arm the timer for 1-2 ticks later if not already. */
-	if (!timer_pending(&pcpu->cpu_timer)) {
-		cpufreq_interactive_timer_resched(pcpu);
-	} else if (time_after_eq(jiffies, pcpu->cpu_timer.expires)) {
-		del_timer(&pcpu->cpu_timer);
-		del_timer(&pcpu->cpu_slack_timer);
-		cpufreq_interactive_timer(raw_smp_processor_id());
-	}
-
-	up_read(&pcpu->enable_sem);
 }
 
 static int cpufreq_interactive_speedchange_task(void *data)
@@ -641,7 +641,7 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 			cpu_down(cpu);
 
 	suspended = true;
-	/* Now we will go and  limit the policy to powersaving */
+	/* Now we will go and  limit the policy to max efficiency */
 	struct cpufreq_interactive_cpuinfo *pcpu;
 	pcpu = &per_cpu(cpuinfo, first_cpu);
 	__cpufreq_driver_target(pcpu->policy, pcpu->policy->min, CPUFREQ_RELATION_L);

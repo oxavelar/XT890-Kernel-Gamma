@@ -50,7 +50,7 @@ on init
 # init does not automatically run "on early-fs", "on fs", "on post-fs",
 #   "on post-fs-data", "on early-boot", and "on boot" in charge-only-mode
 on charger
-    mount ext4 /dev/block/system /system ro noatime barrier=0 nobh
+    mount ext4 /dev/block/system /system ro nosuid nodev noatime barrier=0 nobh
     mount ext4 /dev/block/userdata /data nosuid nodev noatime barrier=0 nobh data=writeback
 
     setprop persist.service.aplogfs.enable ${persist.service.aplogfs.enable}
