@@ -67,8 +67,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -mno-android \
         -O3 \
         -ftree-vectorize \
-        -fpredictive-commoning \
-        -fgcse-after-reload \
+        -floop-parallelize-all \
+        -ftree-parallelize-loops=2 \
         -floop-block \
         -floop-interchange \
         -floop-strip-mine \
@@ -86,6 +86,8 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 export MODULES_TOOLCHAIN_FLAGS := \
         -O2 \
         -ftree-vectorize \
+        -fmodulo-sched \
+        -fmodulo-sched-allow-regmoves \
         $(Z2480_OPTIMIZATION_FLAGS) \
 
 ifeq ($(KVERSION), linux-3.0)
