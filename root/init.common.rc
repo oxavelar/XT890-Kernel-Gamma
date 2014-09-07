@@ -74,7 +74,7 @@ on boot
     # Memory and caching boosts
     write /proc/sys/vm/dirty_expire_centisecs 0
     write /proc/sys/vm/dirty_writeback_centisecs 0
-    write /proc/sys/vm/vfs_cache_pressure 50
+    write /proc/sys/vm/vfs_cache_pressure 20
 
     # Enabling kernel same-page merging (KSM)
     write /sys/kernel/mm/ksm/pages_to_scan 1024
@@ -82,11 +82,11 @@ on boot
     write /sys/kernel/mm/ksm/run 1
 
     # Reducing write latencies, we got eMMC's + SD
-    write /sys/block/mmcblk0/queue/nr_requests 64
-    write /sys/block/mmcblk1/queue/nr_requests 1024
+    write /sys/block/mmcblk0/queue/nr_requests 256
+    write /sys/block/mmcblk1/queue/nr_requests 256
     # Default Read Ahead value for sdcard devices
-    write /sys/block/mmcblk0/queue/read_ahead_kb 128
-    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
+    write /sys/block/mmcblk0/queue/read_ahead_kb 512
+    write /sys/block/mmcblk1/queue/read_ahead_kb 3072
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
