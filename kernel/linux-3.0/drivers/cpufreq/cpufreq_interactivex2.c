@@ -70,7 +70,7 @@ static struct mutex gov_lock;
 static bool suspended = false;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = 1400000;
+static unsigned int hispeed_freq = 1600000;
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 99
@@ -86,13 +86,13 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (80 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (32 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
  * The sample rate of the timer used to increase frequency
  */
-#define DEFAULT_TIMER_RATE (20 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE (16 * USEC_PER_MSEC)
 static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 
 /*
@@ -129,14 +129,12 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 * Because of this, whitelist specific known (series) of CPUs by default, and
 * leave all others up to the user.
 */
-/*
+
 #if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
 static bool io_is_busy = 1;
 #else
 static bool io_is_busy = 0;
 #endif
-*/
-static bool io_is_busy = 0;
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);

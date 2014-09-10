@@ -76,14 +76,14 @@
 
 int drm_psb_debug = PSB_D_DISABLED;
 int drm_psb_enable_cabc = 1;
-int drm_psb_enable_gamma;
+int drm_psb_enable_gamma = 1;
 int drm_psb_enable_color_conversion;
 /*EXPORT_SYMBOL(drm_psb_debug); */
 static int drm_psb_trap_pagefaults;
 
 bool gbdispstatus = true;
 
-int drm_psb_disable_vsync = 1;
+int drm_psb_disable_vsync = 0;
 int drm_psb_no_fb;
 int drm_psb_force_pipeb;
 int drm_msvdx_pmpolicy = PSB_PMPOLICY_POWERDOWN;
@@ -93,8 +93,8 @@ int drm_topaz_pmpolicy = PSB_PMPOLICY_POWERDOWN;
 int drm_topaz_sbuswa;
 int drm_psb_ospm = 1;
 int drm_psb_gl3_enable = 1;
-int drm_psb_topaz_clockgating;
-int gfxrtdelay = 2 * 1000;
+int drm_psb_topaz_clockgating = 1;
+int gfxrtdelay = 800;
 int drm_psb_3D_vblank = 1;
 int drm_psb_smart_vsync = 1;
 int drm_psb_te_timer_delay = (DRM_HZ / 40);
