@@ -71,7 +71,7 @@ static const int queue_quantum[] = {
 
 /* Default values for idling on read queues */
 #define ROW_IDLE_TIME_MSEC 5    /* msec */
-#define ROW_READ_FREQ_MSEC 20   /* msec */
+#define ROW_READ_FREQ_MSEC 5    /* msec */
 
 /**
  * struct rowq_idling_data -  parameters for idling on the queue
