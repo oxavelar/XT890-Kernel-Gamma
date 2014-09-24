@@ -74,11 +74,11 @@ static int sched_power_savings_backup;
 static unsigned int hispeed_freq = 1600000;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 98
+#define DEFAULT_GO_HISPEED_LOAD 99
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 90
+#define DEFAULT_TARGET_LOAD 95
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -131,11 +131,11 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 * leave all others up to the user.
 */
 
-//#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
-//static bool io_is_busy = 1;
-//#else
+#if defined(CONFIG_X86) && defined(X86_VENDOR_INTEL)
+static bool io_is_busy = 1;
+#else
 static bool io_is_busy = 0;
-//#endif
+#endif
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
