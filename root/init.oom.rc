@@ -17,8 +17,8 @@ on boot
 # be killed.  These numbers are in pages (4k).
     setprop ro.FOREGROUND_APP_MEM 2048
     setprop ro.VISIBLE_APP_MEM 4096
-    setprop ro.SECONDARY_SERVER_MEM 8192
-    setprop ro.BACKUP_APP_MEM 17920
+    setprop ro.SECONDARY_SERVER_MEM 10240
+    setprop ro.BACKUP_APP_MEM 18432
     setprop ro.HOME_APP_MEM 20480
     setprop ro.HIDDEN_APP_MEM 20480
     setprop ro.CONTENT_PROVIDER_MEM 32768
@@ -29,7 +29,7 @@ on boot
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,9,15
-    write /sys/module/lowmemorykiller/parameters/minfree 2048,4096,8192,17920,20480,32768
+    write /sys/module/lowmemorykiller/parameters/minfree 2048,4096,10240,18432,20480,32768
     write /sys/module/lowmemorykiller/parameters/debug_level 0
     chown root system /sys/module/lowmemorykiller/parameters/adj
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj
@@ -41,5 +41,5 @@ on boot
     write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     write /proc/sys/vm/oom_dump_tasks 0
-    write /proc/sys/vm/lowmem_reserve_ratio "64 64 8"
+    write /proc/sys/vm/lowmem_reserve_ratio "32 32 2"
 

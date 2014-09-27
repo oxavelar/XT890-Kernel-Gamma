@@ -69,6 +69,7 @@ static struct mutex gov_lock;
 /* To keep track when the screen is off */
 static bool suspended = false;
 static int sched_power_savings_backup;
+static bool io_is_busy_backup;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
 static unsigned int hispeed_freq = 1600000;
@@ -87,20 +88,20 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (16 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (24 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
  * The sample rate of the timer used to increase frequency
  */
-#define DEFAULT_TIMER_RATE (8 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE (12 * USEC_PER_MSEC)
 static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 
 /*
  * Wait this long before raising speed above hispeed, by default a single
  * timer interval.
  */
-#define DEFAULT_ABOVE_HISPEED_DELAY (10 * DEFAULT_TIMER_RATE)
+#define DEFAULT_ABOVE_HISPEED_DELAY DEFAULT_TIMER_RATE
 static unsigned int default_above_hispeed_delay[] = {
 	DEFAULT_ABOVE_HISPEED_DELAY };
 static spinlock_t above_hispeed_delay_lock;
@@ -118,7 +119,7 @@ static u64 boostpulse_endtime;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
+#define DEFAULT_TIMER_SLACK (8 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 /*
@@ -646,6 +647,8 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 	sched_power_savings_backup = sched_mc_power_savings;
 	sched_mc_power_savings = 2;
 #endif
+	io_is_busy_backup = io_is_busy;
+	io_is_busy = 0;
 
 	/* Now we will go and  limit the policy to max efficiency */
 	struct cpufreq_interactive_cpuinfo *pcpu;
@@ -668,6 +671,7 @@ static void interactive_late_resume(struct early_suspend *handler) {
 #ifdef CONFIG_SCHED_MC
 	sched_mc_power_savings = sched_power_savings_backup;
 #endif
+	io_is_busy = io_is_busy_backup;
 
 	/* Now we can unlimit the policy to hi-speed */
 	struct cpufreq_interactive_cpuinfo *pcpu;
