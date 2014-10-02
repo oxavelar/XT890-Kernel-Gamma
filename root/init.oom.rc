@@ -41,5 +41,5 @@ on boot
     write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     write /proc/sys/vm/oom_dump_tasks 0
-    write /proc/sys/vm/lowmem_reserve_ratio "32 32 2"
+    write /proc/sys/vm/lowmem_reserve_ratio "64 64 8"
 
