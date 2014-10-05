@@ -68,18 +68,17 @@ static struct mutex gov_lock;
 
 /* To keep track when the screen is off */
 static bool suspended = false;
-static int sched_power_savings_backup;
 static bool io_is_busy_backup;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = 1600000;
+static unsigned int hispeed_freq;
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 98
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 90
+#define DEFAULT_TARGET_LOAD 80
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -633,52 +632,53 @@ static void cpufreq_interactive_boost(void)
 }
 
 static void interactive_early_suspend(struct early_suspend *handler) {
-	unsigned int cpu;
+	unsigned int first_cpu, cpu;
+	struct cpufreq_interactive_cpuinfo *pcpu;
+
+	if (num_online_cpus() < num_present_cpus()) return;
+
+	/* If we are here, please take all the other cores out */
+	first_cpu = cpumask_first(cpu_online_mask);
+	suspended = true;
+	for_each_online_cpu(cpu)
+		if (cpu != first_cpu)
+			cpu_down(cpu);
 
 	if (suspended) return;
 
-	suspended = true;
-
-#ifdef CONFIG_SCHED_SMT
-	sched_power_savings_backup = sched_smt_power_savings;
-	sched_smt_power_savings = 2;
-#endif
-#ifdef CONFIG_SCHED_MC
-	sched_power_savings_backup = sched_mc_power_savings;
-	sched_mc_power_savings = 2;
-#endif
 	io_is_busy_backup = io_is_busy;
 	io_is_busy = 0;
 
 	/* Now we will go and  limit the policy to max efficiency */
-	struct cpufreq_interactive_cpuinfo *pcpu;
 	for_each_online_cpu(cpu) {
-    	pcpu = &per_cpu(cpuinfo, cpu);
-    	__cpufreq_driver_target(pcpu->policy, pcpu->policy->min, CPUFREQ_RELATION_L);
-    }
+		pcpu = &per_cpu(cpuinfo, cpu);
+		__cpufreq_driver_target(pcpu->policy, pcpu->policy->min, CPUFREQ_RELATION_L);
+	}
 }
 
 static void interactive_late_resume(struct early_suspend *handler) {
-	unsigned int cpu;
-
+	unsigned int first_cpu, cpu;
+	struct cpufreq_interactive_cpuinfo *pcpu;
+ 
+	if (num_online_cpus() == num_present_cpus()) return;
 	if (!suspended) return;
-	
+		
+	first_cpu = cpumask_first(cpu_online_mask);
 	suspended = false;
 
-#ifdef CONFIG_SCHED_SMT
-	sched_smt_power_savings = sched_power_savings_backup;
-#endif
-#ifdef CONFIG_SCHED_MC
-	sched_mc_power_savings = sched_power_savings_backup;
-#endif
 	io_is_busy = io_is_busy_backup;
 
+	pcpu = &per_cpu(cpuinfo, first_cpu);
+	/* If we are here, please take all the other cores back */
+	for_each_present_cpu(cpu)
+		if (cpu != first_cpu)
+			__cpu_up(cpu);
+
 	/* Now we can unlimit the policy to hi-speed */
-	struct cpufreq_interactive_cpuinfo *pcpu;
 	for_each_online_cpu(cpu) {
-    	pcpu = &per_cpu(cpuinfo, cpu);
-    	__cpufreq_driver_target(pcpu->policy, pcpu->policy->max, CPUFREQ_RELATION_H);
-    }
+		pcpu = &per_cpu(cpuinfo, cpu);
+		__cpufreq_driver_target(pcpu->policy, pcpu->policy->max, CPUFREQ_RELATION_H);
+	}
 }
 
 static struct early_suspend interactive_power_suspend = {
