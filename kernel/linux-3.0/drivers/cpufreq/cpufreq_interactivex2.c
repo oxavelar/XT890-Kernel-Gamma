@@ -635,16 +635,14 @@ static void interactive_early_suspend(struct early_suspend *handler) {
 	unsigned int first_cpu, cpu;
 	struct cpufreq_interactive_cpuinfo *pcpu;
 
-	if (num_online_cpus() < num_present_cpus()) return;
+	if ((num_online_cpus() < num_present_cpus()) | suspended) return;
 
+	suspended = true;
 	/* If we are here, please take all the other cores out */
 	first_cpu = cpumask_first(cpu_online_mask);
-	suspended = true;
 	for_each_online_cpu(cpu)
 		if (cpu != first_cpu)
 			cpu_down(cpu);
-
-	if (suspended) return;
 
 	io_is_busy_backup = io_is_busy;
 	io_is_busy = 0;
@@ -660,8 +658,7 @@ static void interactive_late_resume(struct early_suspend *handler) {
 	unsigned int first_cpu, cpu;
 	struct cpufreq_interactive_cpuinfo *pcpu;
  
-	if (num_online_cpus() == num_present_cpus()) return;
-	if (!suspended) return;
+	if ((num_online_cpus() == num_present_cpus()) | !suspended) return;
 		
 	first_cpu = cpumask_first(cpu_online_mask);
 	suspended = false;
@@ -672,7 +669,7 @@ static void interactive_late_resume(struct early_suspend *handler) {
 	/* If we are here, please take all the other cores back */
 	for_each_present_cpu(cpu)
 		if (cpu != first_cpu)
-			__cpu_up(cpu);
+			cpu_up(cpu);
 
 	/* Now we can unlimit the policy to hi-speed */
 	for_each_online_cpu(cpu) {
