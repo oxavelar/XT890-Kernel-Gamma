@@ -72,8 +72,8 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
     # Memory and caching boosts
-    write /proc/sys/vm/dirty_expire_centisecs 1250
-    write /proc/sys/vm/dirty_writeback_centisecs 2500
+    write /proc/sys/vm/dirty_expire_centisecs 200
+    write /proc/sys/vm/dirty_writeback_centisecs 200
     write /proc/sys/vm/vfs_cache_pressure 50
 
     # Enabling kernel same-page merging (KSM)
