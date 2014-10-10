@@ -22,14 +22,12 @@
 ############################################################################
 
 export ARCH := i386
-ifeq ($(ARCH), i386)
+ifneq ($(wildcard /usr/bin/gcc-4.9),)
+  export CC := /usr/bin/gcc-4.9
+else
   export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
-else ifeq ($(ARCH), x86_64)
-  export CROSS_COMPILE := $(PWD)/gcc/x86_64-linux-android-4.8/bin/x86_64-linux-android-
 endif
 export KBUILD_VERBOSE := 0
-
-unexport CROSS_COMPILE
 
 ############################################################################
 ##################### LOCAL SETUP AND FILE STRUCTURES ######################
@@ -52,7 +50,6 @@ export Z2480_OPTIMIZATION_FLAGS := \
         -mtune=pentium3 \
         -mx32 \
         -mssse3 \
-        -mfpmath=387 \
         -mcx16 \
         -msahf \
         -mmovbe \
@@ -103,7 +100,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=200M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=224M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
 
 .PHONY: bootimage
 bootimage: kernel modules
