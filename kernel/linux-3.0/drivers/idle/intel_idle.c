@@ -226,7 +226,7 @@ static struct cpuidle_state mfld_cstates[MWAIT_MAX_NUM_CSTATES] = {
 		.driver_data = (void *) 0x00,
 		.flags = CPUIDLE_FLAG_TIME_VALID,
 		.exit_latency = CSTATE_EXIT_LATENCY_C1,
-		.target_residency = 8,
+		.target_residency = 20,
 		.enter = &intel_idle },
 	{
 		.name = "ATM-C2",
