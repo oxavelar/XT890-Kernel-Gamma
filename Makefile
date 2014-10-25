@@ -46,7 +46,7 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 ############################################################################
 
 export Z2480_OPTIMIZATION_FLAGS := \
-        -march=atom \
+        -march=core2 \
         -mtune=pentium3 \
         -mx32 \
         -mssse3 \
@@ -83,6 +83,16 @@ export ANDROID_TOOLCHAIN_FLAGS := \
 export MODULES_TOOLCHAIN_FLAGS := \
         -O2 \
         -ftree-vectorize \
+        -floop-block \
+        -floop-interchange \
+        -floop-strip-mine \
+        -fgraphite-identity \
+        -ftree-loop-distribution \
+        -ftree-loop-linear \
+        -ftree-loop-im \
+        -ftree-loop-if-convert \
+        -ftree-loop-if-convert-stores \
+        -foptimize-register-move \
         -fmodulo-sched \
         -fmodulo-sched-allow-regmoves \
         $(Z2480_OPTIMIZATION_FLAGS) \
@@ -100,7 +110,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=224M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=128M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
 
 .PHONY: bootimage
 bootimage: kernel modules
