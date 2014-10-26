@@ -110,7 +110,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=128M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=192M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
 
 .PHONY: bootimage
 bootimage: kernel modules

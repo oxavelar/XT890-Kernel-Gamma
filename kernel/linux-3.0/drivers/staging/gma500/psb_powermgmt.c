@@ -54,7 +54,7 @@ void gma_power_init(struct drm_device *dev)
 	dev_priv->suspended = false;	/* And not suspended */
 	mutex_init(&power_mutex);
 
-	if (!IS_MRST(dev)) {
+//	if (!IS_MRST(dev)) {
 		/* FIXME: wants further review */
 		u32 gating = PSB_RSGX32(PSB_CR_CLKGATECTL);
 		/* Disable 2D clock gating */
@@ -62,7 +62,7 @@ void gma_power_init(struct drm_device *dev)
 		gating |= 1;
 		PSB_WSGX32(gating, PSB_CR_CLKGATECTL);
 		PSB_RSGX32(PSB_CR_CLKGATECTL);
-	}
+//	}
 }
 
 /**
