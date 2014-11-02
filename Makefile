@@ -23,11 +23,12 @@
 
 export ARCH := i386
 ifneq ($(wildcard /usr/bin/gcc),)
-  export CC := /usr/bin/gcc
+  export CC := /usr/bin/gcc-4.8
 else
   export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 endif
 export KBUILD_VERBOSE := 0
+export LDFLAGS := "-Wl,-O1"
 
 ############################################################################
 ##################### LOCAL SETUP AND FILE STRUCTURES ######################
@@ -81,7 +82,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         $(Z2480_OPTIMIZATION_FLAGS) \
 
 export MODULES_TOOLCHAIN_FLAGS := \
-        -O2 \
+        -Ofast \
         -ftree-vectorize \
         -floop-block \
         -floop-interchange \

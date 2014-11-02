@@ -20,18 +20,18 @@ on boot
     setprop ro.VISIBLE_APP_MEM 10240
     setprop ro.PERCEPTIBLE_APP_MEM 12288
     setprop ro.HEAVY_WEIGHT_APP_MEM 12288
-    setprop ro.SECONDARY_SERVER_MEM 14336
-    setprop ro.BACKUP_APP_MEM 14336
-    setprop ro.HOME_APP_MEM 14336
-    setprop ro.HIDDEN_APP_MEM 16384
-    setprop ro.EMPTY_APP_MEM 20480
+    setprop ro.SECONDARY_SERVER_MEM 20480
+    setprop ro.BACKUP_APP_MEM 20480
+    setprop ro.HOME_APP_MEM 20480
+    setprop ro.HIDDEN_APP_MEM 32678
+    setprop ro.EMPTY_APP_MEM 65356
 
 # Write value must be consistent with the above properties.
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
-    write /sys/module/lowmemorykiller/parameters/minfree 8192,10240,12288,14336,16384,20480
+    write /sys/module/lowmemorykiller/parameters/minfree 8192,10240,12288,20480,32678,65356
     write /sys/module/lowmemorykiller/parameters/debug_level 0
     chown root system /sys/module/lowmemorykiller/parameters/adj
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj
@@ -44,5 +44,5 @@ on boot
     write /proc/sys/vm/overcommit_ratio 100
     write /proc/sys/vm/min_free_order_shift 4
     write /proc/sys/vm/oom_dump_tasks 0
-    write /proc/sys/vm/lowmem_reserve_ratio "8 8"
+    write /proc/sys/vm/lowmem_reserve_ratio "64 32"
 
