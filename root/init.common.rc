@@ -72,7 +72,7 @@ on boot
     chmod 0664 /sys/devices/system/cpu/cpu1/cpufreq/scaling_driver
 
     # Memory and caching boosts
-    write /proc/sys/vm/vfs_cache_pressure 50
+    write /proc/sys/vm/vfs_cache_pressure 10
 
     # Enabling kernel same-page merging (KSM)
     chown root system /sys/kernel/mm/ksm/pages_to_scan
@@ -81,16 +81,16 @@ on boot
     chmod 0664 /sys/kernel/mm/ksm/sleep_millisecs
     chown root system /sys/kernel/mm/ksm/run
     chmod 0664 /sys/kernel/mm/ksm/run
-    write /sys/kernel/mm/ksm/pages_to_scan 128
+    write /sys/kernel/mm/ksm/pages_to_scan 256
     write /sys/kernel/mm/ksm/sleep_millisecs 500
     write /sys/kernel/mm/ksm/run 1
 
     # Reducing write latencies, we got eMMC's + SD
     write /sys/block/mmcblk0/queue/nr_requests 128
-    write /sys/block/mmcblk1/queue/nr_requests 128
+    write /sys/block/mmcblk1/queue/nr_requests 2048
     # Default Read Ahead value for sdcard devices
-    write /sys/block/mmcblk0/queue/read_ahead_kb 512
-    write /sys/block/mmcblk1/queue/read_ahead_kb 512
+    write /sys/block/mmcblk0/queue/read_ahead_kb 128
+    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
     # Tag as non rotational devices
     write /sys/block/mmcblk0/queue/rotational 0
     write /sys/block/mmcblk1/queue/rotational 0
