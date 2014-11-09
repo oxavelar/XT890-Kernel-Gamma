@@ -63,7 +63,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         -pipe \
         -flto \
         -mno-android \
-        -O3 \
+        -O2 \
         -ftree-vectorize \
         -floop-parallelize-all \
         -ftree-parallelize-loops=2 \
@@ -82,7 +82,7 @@ export ANDROID_TOOLCHAIN_FLAGS := \
         $(Z2480_OPTIMIZATION_FLAGS) \
 
 export MODULES_TOOLCHAIN_FLAGS := \
-        -Ofast \
+        -O2 \
         -ftree-vectorize \
         -floop-block \
         -floop-interchange \
@@ -111,7 +111,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=192M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 loglevel=4 zram.num_devices=2"
 
 .PHONY: bootimage
 bootimage: kernel modules
