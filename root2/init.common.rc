@@ -45,11 +45,33 @@ on boot
     chmod 0664 /sys/class/backlight/psb-bl/max_brightness
     chmod 0664 /sys/class/backlight/psb-bl/actual_brightness
 
-    #Change mmc queue nr_requests from 128 to 32 to reduce write latencies
-    write /sys/block/mmcblk0/queue/nr_requests 32
+    # Memory and caching boosts
+    write /proc/sys/vm/vfs_cache_pressure 10
 
-    #reduce dirty memory size
-    write /proc/sys/vm/dirty_background_bytes  5242880
+    # Enabling kernel same-page merging (KSM)
+    chown root system /sys/kernel/mm/ksm/pages_to_scan
+    chmod 0664 /sys/kernel/mm/ksm/pages_to_scan
+    chown root system /sys/kernel/mm/ksm/sleep_millisecs
+    chmod 0664 /sys/kernel/mm/ksm/sleep_millisecs
+    chown root system /sys/kernel/mm/ksm/run
+    chmod 0664 /sys/kernel/mm/ksm/run
+    write /sys/kernel/mm/ksm/pages_to_scan 256
+    write /sys/kernel/mm/ksm/sleep_millisecs 500
+    write /sys/kernel/mm/ksm/run 1
+
+    # Reducing write latencies, we got eMMC's + SD
+    write /sys/block/mmcblk0/queue/nr_requests 128
+    write /sys/block/mmcblk1/queue/nr_requests 2048
+    # Default Read Ahead value for sdcard devices
+    write /sys/block/mmcblk0/queue/read_ahead_kb 128
+    write /sys/block/mmcblk1/queue/read_ahead_kb 2048
+    # Tag as non rotational devices
+    write /sys/block/mmcblk0/queue/rotational 0
+    write /sys/block/mmcblk1/queue/rotational 0
+    # Disable iostats to reduce overhead
+    write /sys/block/mmcblk0/queue/iostats 0
+    write /sys/block/mmcblk1/queue/iostats 0
+
 
 # Change TCP Net-Core buffers sizes to improve cellular data throughput
      write /proc/sys/net/core/rmem_default 1048576

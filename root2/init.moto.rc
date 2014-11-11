@@ -39,3 +39,7 @@ service loadpreinstalls /system/bin/logwrapper /system/bin/loadpreinstalls.sh
 service charge_only_mode /system/bin/charge_only_mode
     class charger
     disabled
+
+service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
+    class main
+    oneshot

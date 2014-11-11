@@ -40,7 +40,7 @@ on boot
 
 # The following impacts memory transactions too and can speed up or
 # slow down the system
-    write /proc/sys/vm/dirty_background_bytes 1024000
+    write /proc/sys/vm/dirty_background_bytes 5242880
     write /proc/sys/vm/dirty_bytes 20480000
     write /proc/sys/vm/oom_dump_tasks 0
     write /proc/sys/vm/lowmem_reserve_ratio "64 32"
