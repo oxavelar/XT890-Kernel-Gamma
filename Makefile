@@ -23,7 +23,7 @@
 
 export ARCH := i386
 ifneq ($(wildcard /usr/bin/gcc),)
-  export CC := /usr/bin/gcc-4.8
+  export CC := /usr/bin/gcc
 else
   export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 endif
@@ -111,7 +111,7 @@ endif
 ########################### KERNEL BUILD STEPS #############################
 ############################################################################
 
-BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=256M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 slub_max_order=2 zram.num_devices=2 loglevel=4"
+BOOT_CMDLINE="init=/init pci=noearly console=logk0 vmalloc=272M earlyprintk=nologger hsu_dma=7 kmemleak=off androidboot.bootmedia=sdcard androidboot.hardware=sc1 emmc_ipanic.ipanic_part_number=6 slub_max_order=2 zram.num_devices=2 loglevel=4"
 
 .PHONY: bootimage
 bootimage: kernel modules

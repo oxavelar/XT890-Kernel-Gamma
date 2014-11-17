@@ -81,8 +81,8 @@ on boot
     chmod 0664 /sys/kernel/mm/ksm/sleep_millisecs
     chown root system /sys/kernel/mm/ksm/run
     chmod 0664 /sys/kernel/mm/ksm/run
-    write /sys/kernel/mm/ksm/pages_to_scan 256
-    write /sys/kernel/mm/ksm/sleep_millisecs 500
+    write /sys/kernel/mm/ksm/pages_to_scan 2048
+    write /sys/kernel/mm/ksm/sleep_millisecs 5000
     write /sys/kernel/mm/ksm/run 1
 
     # Reducing write latencies, we got eMMC's + SD
