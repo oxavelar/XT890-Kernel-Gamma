@@ -22,8 +22,8 @@
 ############################################################################
 
 export ARCH := i386
-ifneq ($(wildcard /usr/bin/gcc-4.9-NONE),)
-  export CC := /usr/bin/gcc-4.9
+ifneq ($(wildcard /usr/bin/gcc-4.8-NONE),)
+  export CC := /usr/bin/gcc-4.8
 else
   export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 endif
