@@ -22,13 +22,12 @@
 ############################################################################
 
 export ARCH := i386
-ifneq ($(wildcard /usr/bin/gcc),)
-  export CC := /usr/bin/gcc
+ifneq ($(wildcard /usr/bin/gcc-4.9-NONE),)
+  export CC := /usr/bin/gcc-4.9
 else
   export CROSS_COMPILE := $(PWD)/gcc/i686-linux-android-4.7/bin/i686-linux-android-
 endif
 export KBUILD_VERBOSE := 0
-export LDFLAGS := "-Wl,-O1"
 
 ############################################################################
 ##################### LOCAL SETUP AND FILE STRUCTURES ######################
@@ -46,57 +45,60 @@ MBUILD_OUT_PATH = $(OUT_PATH)/mbuild
 ############# KERNEL OPTIMIZATION FLAGS FOR THE ATOM Z2480 ################
 ############################################################################
 
-export Z2480_OPTIMIZATION_FLAGS := \
+export INTEL_Z2480 := \
         -march=core2 \
-        -mtune=pentium3 \
-        -mx32 \
+        -mtune=generic \
         -mssse3 \
+        -mfpmath=387 \
+        -m32 \
         -mcx16 \
         -msahf \
         -mmovbe \
-        -fomit-frame-pointer \
         --param l1-cache-line-size=64 \
         --param l1-cache-size=24 \
         --param l2-cache-size=512 \
 
-export ANDROID_TOOLCHAIN_FLAGS := \
-        -pipe \
-        -flto \
-        -mno-android \
-        -O2 \
-        -ftree-vectorize \
-        -floop-parallelize-all \
-        -ftree-parallelize-loops=2 \
-        -floop-block \
+export GRAPHTIE_FLAGS := \
+        -fgraphite-identity \
+        -ftree-loop-linear \
         -floop-interchange \
         -floop-strip-mine \
-        -fgraphite-identity \
-        -ftree-loop-distribution \
-        -ftree-loop-linear \
-        -ftree-loop-im \
-        -ftree-loop-if-convert \
-        -ftree-loop-if-convert-stores \
-        -foptimize-register-move \
-        -fmodulo-sched \
-        -fmodulo-sched-allow-regmoves \
-        $(Z2480_OPTIMIZATION_FLAGS) \
+        -floop-block \
 
-export MODULES_TOOLCHAIN_FLAGS := \
-        -O2 \
+export ANDROID_TOOLCHAIN_FLAGS := \
+        -flto \
+        -O3 \
+        -mno-android \
+        -fomit-frame-pointer \
         -ftree-vectorize \
-        -floop-block \
-        -floop-interchange \
-        -floop-strip-mine \
-        -fgraphite-identity \
+        -ftree-slp-vectorize \
+        -fvect-cost-model \
+        -ftree-partial-pre \
+        -fweb \
+        -fgcse \
+        -fgcse-sm \
+        -fgcse-las \
+        -fgcse-after-reload \
+        -fivopts \
+        -fsched-spec-load \
         -ftree-loop-distribution \
-        -ftree-loop-linear \
+        -ftree-loop-distribute-patterns \
         -ftree-loop-im \
         -ftree-loop-if-convert \
         -ftree-loop-if-convert-stores \
+        -fpredictive-commoning \
         -foptimize-register-move \
+        -fipa-cp-clone \
+        -fipa-pta \
         -fmodulo-sched \
         -fmodulo-sched-allow-regmoves \
-        $(Z2480_OPTIMIZATION_FLAGS) \
+        $(INTEL_Z2480) \
+        $(GRAPHITE_FLAGS) \
+
+export LDFLAGS += -O1 --hash-style=gnu --as-needed
+
+export ANDROID_TOOLCHAIN_FLAGS += -Wno-maybe-uninitialized
+export ANDROID_TOOLCHAIN_FLAGS += -Wno-unused-variable
 
 ifeq ($(KVERSION), linux-3.0)
     # The following modules have problems with -ftree-vectorize
@@ -141,10 +143,10 @@ modules:
 	# General modules from the kernel
 	mkdir -p "$(MBUILD_OUT_PATH)"
 	$(MAKE) -C "$(KSRC_PATH)" O="$(MBUILD_OUT_PATH)" "$(KDEFCONFIG)"
-	$(MAKE) -C "$(KSRC_PATH)" O="$(MBUILD_OUT_PATH)" ANDROID_TOOLCHAIN_FLAGS="$(MODULES_TOOLCHAIN_FLAGS)" modules
+	$(MAKE) -C "$(KSRC_PATH)" O="$(MBUILD_OUT_PATH)" ANDROID_TOOLCHAIN_FLAGS+="$(ANDROID_TOOLCHAIN_FLAGS) -fno-lto" modules
 	# Wireless modules
-	cd "$(WL12XX_SRC_PATH)"; scripts/driver-select wl12xx
-	$(MAKE) -C "$(WL12XX_SRC_PATH)" KLIB="$(MBUILD_OUT_PATH)" KLIB_BUILD="$(MBUILD_OUT_PATH)" ANDROID_TOOLCHAIN_FLAGS="$(MODULES_TOOLCHAIN_FLAGS)"
+	#cd "$(WL12XX_SRC_PATH)"; scripts/driver-select wl12xx
+	$(MAKE) -C "$(WL12XX_SRC_PATH)" KLIB="$(MBUILD_OUT_PATH)" KLIB_BUILD="$(MBUILD_OUT_PATH)" ANDROID_TOOLCHAIN_FLAGS+="$(ANDROID_TOOLCHAIN_FLAGS -fno-lto)"
 
 .PHONY: clean
 clean:
