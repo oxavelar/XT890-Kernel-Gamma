@@ -190,8 +190,38 @@ service pcsc /system/bin/pcscd --auto-exit
 #    group system inet radio
 #    user system
 
+on property:service.ad_proxy.enable=0
+    stop ad_proxy
+    setprop system.at-proxy.mode ${persist.system.at-proxy.mode}
+
+on property:service.ad_proxy.enable=1
+    stop proxy
+    stop proxy-tunneling
+    setprop sys.usb.config rndis,acm,adb
+    start ad_proxy
+
 on property:persist.ril-daemon.disable=0
     start ril-daemon
 
 on property:persist.ril-daemon.disable=1
     stop ril-daemon
+
+on property:persist.system.at-proxy.mode=*
+setprop system.at-proxy.mode ${persist.system.at-proxy.mode}
+
+on property:system.at-proxy.mode=0
+    stop proxy
+    stop proxy-tunneling
+    start atproxy_usbreset
+
+on property:system.at-proxy.mode=1
+    stop ad_proxy
+    stop proxy-tunneling
+    setprop sys.usb.config rndis,acm,adb
+    start proxy
+
+on property:system.at-proxy.mode=2
+    stop ad_proxy
+    stop proxy
+    setprop sys.usb.config rndis,acm,adb
+    start proxy-tunneling

@@ -1,0 +1,7 @@
+service swap-on /system/bin/logwrapper /system/bin/sh /init.swap.sh
+    class core
+    user root
+    oneshot
+
+on post-fs
+    start swap-on

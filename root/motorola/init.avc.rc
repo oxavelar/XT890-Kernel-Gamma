@@ -14,6 +14,7 @@ on charger
     insmod /lib/modules/videobuf2-core.ko
     insmod /lib/modules/videobuf2-memops.ko
     insmod /lib/modules/mt9e013.ko
+    insmod /lib/modules/mt9m114.ko
     insmod /lib/modules/ov7736.ko
     insmod /lib/modules/lm3554.ko
     insmod /lib/modules/atomisp.ko
